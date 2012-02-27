@@ -15,7 +15,6 @@ public class File implements Resource {
 
 	@Override
 	public RType getType() {
-
 		return null;
 	}
 
@@ -24,5 +23,55 @@ public class File implements Resource {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
+
+    public String getFileSize() {
+        return fileSize;
+    }
+
+    public void setFileSize(String fileSize) {
+        this.fileSize = fileSize;
+    }
+
+    public String getReqURL() {
+        return reqURL;
+    }
+
+    public void setReqURL(String reqURL) {
+        this.reqURL = reqURL;
+    }
+
+    public Date getLastModified() {
+        return lastModified;
+    }
+
+    public void setLastModified(Date lastModified) {
+        this.lastModified = lastModified;
+    }
+
+    public String getReqType() {
+        return reqType;
+    }
+
+    public void setReqType(String reqType) {
+        this.reqType = reqType;
+    }
+
+    public byte[] getFileContents() {
+        return fileContents;
+    }
+
+    public void setFileContents(byte[] fileContents) {
+        this.fileContents = fileContents;
+    }
+	
+	
 
 }

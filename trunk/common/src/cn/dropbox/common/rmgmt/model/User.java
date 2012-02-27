@@ -21,4 +21,29 @@ public class User implements Resource {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+    public String getUserName() {
+        return userName;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
+    public String getUserid() {
+        return userid;
+    }
+
+    public void setUserid(String userid) {
+        this.userid = userid;
+    }
+
+    public Directory getRootDirectory() {
+        return rootDirectory;
+    }
+
+    public void setRootDirectory(Directory rootDirectory) {
+        this.rootDirectory = rootDirectory;
+    }
+	
 }
