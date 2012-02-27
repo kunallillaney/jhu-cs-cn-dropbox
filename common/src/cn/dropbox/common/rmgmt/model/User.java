@@ -7,20 +7,22 @@ public class User implements Resource {
 	String userName;
 
 	String userid;
-
-	Directory rootDirectory;
+	String URI;
+	Directory rootDirectory; // TODO: Kunal please remove this. This is not needed!
 
 	@Override
 	public RType getType() {
-
-		return null;
+	    return RType.USERACCOUNT;
 	}
 
 	@Override
 	public String getURI() {
-		// TODO Auto-generated method stub
-		return null;
+	    return URI;
 	}
+
+    public void setURI(String uRI) {
+        URI = uRI;
+    }
 
     public String getUserName() {
         return userName;
