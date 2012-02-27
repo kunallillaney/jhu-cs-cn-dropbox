@@ -10,12 +10,12 @@ public class File implements Resource {
 	String fileSize;
 	String reqURL;
 	Date lastModified;
-	String reqType;
-	byte[] fileContents;
+	String mimeType;
+    byte[] fileContents;
 
 	@Override
 	public RType getType() {
-		return null;
+		return RType.FILE;
 	}
 
 	@Override
@@ -56,12 +56,12 @@ public class File implements Resource {
         this.lastModified = lastModified;
     }
 
-    public String getReqType() {
-        return reqType;
+    public String getMimeType() {
+        return mimeType;
     }
 
-    public void setReqType(String reqType) {
-        this.reqType = reqType;
+    public void setMimeType(String mimeType) {
+        this.mimeType = mimeType;
     }
 
     public byte[] getFileContents() {
@@ -71,7 +71,14 @@ public class File implements Resource {
     public void setFileContents(byte[] fileContents) {
         this.fileContents = fileContents;
     }
+    
+    @Override
+    public String toString() {
+        // TODO Auto-generated method stub
+        return "<"+fileName+">|" +
+        		"<"+fileSize+">|" +
+        		"<"+mimeType+">|" +
+        		"<"+reqURL+">";
+    }
 	
-	
-
 }
