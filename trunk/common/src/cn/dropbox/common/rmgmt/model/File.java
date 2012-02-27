@@ -1,6 +1,7 @@
 package cn.dropbox.common.rmgmt.model;
 
 import java.util.Date;
+import java.util.GregorianCalendar;
 
 import cn.dropbox.common.rmgmt.api.Resource;
 
@@ -8,8 +9,8 @@ public class File implements Resource {
 
 	String fileName;
 	String fileSize;
-	String reqURL;
-	Date lastModified;
+	String URI;
+    Date lastModified;
 	String mimeType;
     byte[] fileContents;
 
@@ -20,9 +21,12 @@ public class File implements Resource {
 
 	@Override
 	public String getURI() {
-		// TODO Auto-generated method stub
-		return null;
+	    return URI;
 	}
+
+	public void setURI(String uRI) {
+        URI = uRI;
+    }
 
     public String getFileName() {
         return fileName;
@@ -38,14 +42,6 @@ public class File implements Resource {
 
     public void setFileSize(String fileSize) {
         this.fileSize = fileSize;
-    }
-
-    public String getReqURL() {
-        return reqURL;
-    }
-
-    public void setReqURL(String reqURL) {
-        this.reqURL = reqURL;
     }
 
     public Date getLastModified() {
@@ -78,7 +74,14 @@ public class File implements Resource {
         return "<"+fileName+">|" +
         		"<"+fileSize+">|" +
         		"<"+mimeType+">|" +
-        		"<"+reqURL+">";
+        		"<"+URI+">|" +
+        		"<"+lastModified+">|" +
+                "<"+fileContents+">";
+    }
+
+    public void setDate(int year, int month, int dayOfMonth, int hourOfDay, int minute,
+            int second) {
+        lastModified = new GregorianCalendar(year, month, dayOfMonth, hourOfDay, minute, second).getTime();
     }
 	
 }

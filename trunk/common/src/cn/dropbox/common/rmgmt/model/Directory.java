@@ -7,16 +7,18 @@ import cn.dropbox.common.rmgmt.api.Resource;
 public class Directory implements Resource {
 
 	String dirName;
+	String URI;
 	List<File> files;
 	List<Directory> directories;
     
 	public RType getType() {
-        // TODO Auto-generated method stub
-        return null;
+	    return RType.DIRECTORY;
     }
     public String getURI() {
-        // TODO Auto-generated method stub
-        return null;
+        return URI;
+    }
+    public void setURI(String uRI) {
+        URI = uRI;
     }
     public String getDirName() {
         return dirName;
