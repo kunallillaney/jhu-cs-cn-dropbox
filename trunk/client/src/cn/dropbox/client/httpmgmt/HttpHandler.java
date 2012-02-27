@@ -1,4 +1,4 @@
-package cn.dropbox.httpmgmt;
+package cn.dropbox.client.httpmgmt;
 
 import cn.dropbox.common.rmgmt.api.Resource;
 
