@@ -2,6 +2,7 @@ package cn.dropbox.common.rmgmt.model;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.List;
 import cn.dropbox.common.rmgmt.api.Resource;
 
@@ -60,5 +61,8 @@ public class Directory implements Resource {
         return "<"+dirName+">|" +
         		"<"+getDirSize()+">";
     }
-    
+    public void setLastModified(int year, int month, int dayOfMonth, int hourOfDay, int minute,
+            int second) {
+        lastModified = new GregorianCalendar(year, month, dayOfMonth, hourOfDay, minute, second).getTime();
+    }    
 }
