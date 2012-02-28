@@ -8,6 +8,7 @@ public class Directory implements Resource {
 
 	String dirName;
 	String URI;
+	int numOfElements = -1;
 	List<File> files = new ArrayList<File>();
 	List<Directory> directories = new ArrayList<Directory>();
     
@@ -15,7 +16,7 @@ public class Directory implements Resource {
     public String getResourceName() {
         return getDirName();
     }
-	@Override
+    @Override
 	public RType getType() {
 	    return RType.DIRECTORY;
     }
@@ -44,8 +45,15 @@ public class Directory implements Resource {
     public void setDirectories(List<Directory> directories) {
         this.directories = directories;
     }
+    public void setNumOfElements(int numOfElements) {
+        this.numOfElements = numOfElements;
+    }    
     public int getDirSize() {
-        return getFiles().size() + getDirectories().size();
+        if(numOfElements==-1) {
+            return getFiles().size() + getDirectories().size();
+        } else {
+            return numOfElements;
+        }
     }
     @Override
     public String toString() {
