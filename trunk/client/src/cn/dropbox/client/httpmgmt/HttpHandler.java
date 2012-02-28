@@ -1,6 +1,7 @@
 package cn.dropbox.client.httpmgmt;
 
 import cn.dropbox.common.rmgmt.api.Resource;
+import cn.dropbox.common.rmgmt.model.RType;
 
 public class HttpHandler {
     
@@ -12,7 +13,8 @@ public class HttpHandler {
         Resource res = h.executeGET();
      */
     
-    
+    private String host;
+    private int port;
     private String userName; // TODO: Change the type to User
     
     private Object authHeader; // TODO: Change the type of this object
@@ -26,16 +28,18 @@ public class HttpHandler {
         return handler;
     }
     
-    public void init(String userName, Object authHeader) {
+    public void init(String userName, Object authHeader, String host, int port) {
         this.userName = userName;
         this.authHeader = authHeader;
+        this.host = host;
+        this.port = port;
     }
     
     public void executePUT(Resource resource) {
         
     }
     
-    public Resource executeGET(String URI) {
+    public Resource executeGET(String URI, RType resType) {
         return null;
     }
     
