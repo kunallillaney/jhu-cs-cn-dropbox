@@ -4,7 +4,9 @@ import cn.dropbox.common.rmgmt.model.RType;
 
 public interface Resource {
 
-	RType getType();
+	String getResourceName();
+    
+    RType getType();
 
 	String getURI();
 

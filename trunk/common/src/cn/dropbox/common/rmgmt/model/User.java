@@ -8,6 +8,11 @@ public class User implements Resource {
 	String userid;
 	String URI;
 
+    @Override
+    public String getResourceName() {
+        return getUserName();
+    }
+	
 	@Override
 	public RType getType() {
 	    return RType.USERACCOUNT;
