@@ -2,6 +2,9 @@ package cn.dropbox.common.parser.impl;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -10,15 +13,19 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+import org.w3c.dom.Text;
 
 import com.sun.org.apache.xml.internal.serialize.OutputFormat;
 import com.sun.org.apache.xml.internal.serialize.XMLSerializer;
 
+import cn.dropbox.common.parser.api.XMLConstants;
+import cn.dropbox.common.rmgmt.api.Resource;
 import cn.dropbox.common.rmgmt.model.File;
 
-public class XMLHelper {
+public class XMLHelper implements XMLConstants {
     
     public static Document getDOMMaker() throws ParserConfigurationException {
+        //get an instance of factory
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         //get an instance of builder
         DocumentBuilder db = dbf.newDocumentBuilder();
@@ -38,6 +45,39 @@ public class XMLHelper {
         byteoutStream.close();
         return retXMLStr;
     }
+    
+
+    public static Element constructDateElement(Document dom, Date date) {
+        Element resDateEle = dom.createElement(RESOURCE_DATE_TAG);
+        GregorianCalendar lastModifiedCal = new GregorianCalendar();
+        lastModifiedCal.setTime(date);
+        
+        Element resDateYearEle = dom.createElement(RESOURCE_DATE_YEAR_TAG);
+        Text resDateYearText = dom.createTextNode(Integer.toString(lastModifiedCal.get(Calendar.YEAR)));
+        resDateYearEle.appendChild(resDateYearText);
+        resDateEle.appendChild(resDateYearEle);
+        Element resDateMonthEle = dom.createElement(RESOURCE_DATE_MONTH_TAG);
+        Text resDateMonthText = dom.createTextNode(Integer.toString(lastModifiedCal.get(Calendar.MONTH)));
+        resDateMonthEle.appendChild(resDateMonthText);
+        resDateEle.appendChild(resDateMonthEle);
+        Element resDateDayEle = dom.createElement(RESOURCE_DATE_DAY_TAG);
+        Text resDateDayText = dom.createTextNode(Integer.toString(lastModifiedCal.get(Calendar.DATE)));
+        resDateDayEle.appendChild(resDateDayText);
+        resDateEle.appendChild(resDateDayEle);
+        Element resDateHourEle = dom.createElement(RESOURCE_DATE_HOUR_TAG);
+        Text resDateHourText = dom.createTextNode(Integer.toString(lastModifiedCal.get(Calendar.HOUR)));
+        resDateHourEle.appendChild(resDateHourText);
+        resDateEle.appendChild(resDateHourEle);
+        Element resDateMinuteEle = dom.createElement(RESOURCE_DATE_MINUTE_TAG);
+        Text resDateMinuteText = dom.createTextNode(Integer.toString(lastModifiedCal.get(Calendar.MINUTE)));
+        resDateMinuteEle.appendChild(resDateMinuteText);
+        resDateEle.appendChild(resDateMinuteEle);        
+        Element resDateSecondEle = dom.createElement(RESOURCE_DATE_SECOND_TAG);
+        Text resDateSecondText = dom.createTextNode(Integer.toString(lastModifiedCal.get(Calendar.SECOND)));
+        resDateSecondEle.appendChild(resDateSecondText);
+        resDateEle.appendChild(resDateSecondEle);
+        return resDateEle;
+    }    
     
     /**
      * I take a xml element and the tag name, look for the tag and get
@@ -73,7 +113,7 @@ public class XMLHelper {
         return Integer.parseInt(getTextValue(ele,tagName));
     }
     
-    public static String constructURI(File file) {
-        return "DOC_ROOT" + file.getURI(); // TODO: Prepend doc root
+    public static String constructURI(Resource res) {
+        return "DOC_ROOT" + res.getURI(); // TODO: Prepend doc root
     }
 }
