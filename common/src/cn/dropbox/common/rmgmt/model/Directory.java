@@ -67,13 +67,17 @@ public class Directory implements Resource {
     }
     @Override
     public String toString() {
-        return "<"+dirName+">|" +
+        String retStr =  "<"+dirName+">|" +
         		"<"+getDirSize()+">|" +
         		"<"+URI+">|" +
         		"<"+lastModified+">";
+        retStr += "\n[Files:"+files.toString()+"]";
+        retStr += "\n[SubDirs:"+directories.toString()+"]";
+        return retStr;
+        
     }
     public void setLastModified(int year, int month, int dayOfMonth, int hourOfDay, int minute,
             int second) {
         lastModified = new GregorianCalendar(year, month, dayOfMonth, hourOfDay, minute, second).getTime();
-    }    
+    }
 }

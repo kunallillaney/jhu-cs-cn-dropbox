@@ -191,7 +191,6 @@ public class DirectoryXMLHandler implements XMLHandler, XMLConstants {
             e.printStackTrace();
         } 
     }
-
     
     public static String constructURI(Resource res) {
         return res.getURI(); // TODO: Prepend doc root

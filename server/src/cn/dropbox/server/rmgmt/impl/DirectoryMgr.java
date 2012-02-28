@@ -35,7 +35,8 @@ public class DirectoryMgr implements ResourceMgr {
 				if (tempFile.isDirectory()) {
 					Directory tempdirResource = new Directory();
 					tempdirResource.setDirName(tempFile.getName());
-					tempdirResource.setURI(uri + list[i]);
+					tempdirResource.setURI(uri + list[i] + "/");
+					tempdirResource.setLastModified(new Date(tempFile.lastModified()));
 					dirResource.getDirectories().add(tempdirResource);
 				} else {
 					cn.dropbox.common.rmgmt.model.File tempfileResource = new cn.dropbox.common.rmgmt.model.File();
@@ -56,12 +57,12 @@ public class DirectoryMgr implements ResourceMgr {
 						subdirresource.getDirName());
 				String[] sublist = tempFile.list();
 				for (int j = 0; j < sublist.length; j++) {
-					File subTempFile = new File(ServerListen.DOCROOT + uri,
+					File subTempFile = new File(ServerListen.DOCROOT + uri + "/" + subdirresource.getDirName(),
 							sublist[i]);
 					if (subTempFile.isDirectory()) {
 						Directory subtempdirResource = new Directory();
 						subtempdirResource.setDirName(subTempFile.getName());
-						subtempdirResource.setURI(uri + sublist[i]);
+						subtempdirResource.setURI(uri + "/" + subdirresource.getDirName() + "/" + sublist[i]);
 						subdirresource.getDirectories().add(subtempdirResource);
 					} else {
 						cn.dropbox.common.rmgmt.model.File subtempfileResource = new cn.dropbox.common.rmgmt.model.File();

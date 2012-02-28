@@ -72,7 +72,7 @@ public class FileMgr implements ResourceMgr {
 			file.createNewFile();
 			FileOutputStream out = new FileOutputStream(file);
 			out.write(fileResource.getFileContents());
-
+			out.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
