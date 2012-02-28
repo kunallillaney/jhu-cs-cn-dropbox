@@ -87,7 +87,7 @@ public class File implements Resource {
                 "<"+fileContents+">";
     }
 
-    public void setDate(int year, int month, int dayOfMonth, int hourOfDay, int minute,
+    public void setLastModified(int year, int month, int dayOfMonth, int hourOfDay, int minute,
             int second) {
         lastModified = new GregorianCalendar(year, month, dayOfMonth, hourOfDay, minute, second).getTime();
     }

@@ -47,5 +47,10 @@ public class Directory implements Resource {
     public int getDirSize() {
         return getFiles().size() + getDirectories().size();
     }
+    @Override
+    public String toString() {
+        return "<"+dirName+">|" +
+        		"<"+getDirSize()+">";
+    }
     
 }

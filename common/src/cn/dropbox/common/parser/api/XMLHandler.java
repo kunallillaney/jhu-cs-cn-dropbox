@@ -8,6 +8,6 @@ public interface XMLHandler {
     
     public Resource constructResourceObject(Document xmlDocument);
     
-    public String constructXML(Resource Resource);
+    public String constructXML(Resource resource);
 
 }
