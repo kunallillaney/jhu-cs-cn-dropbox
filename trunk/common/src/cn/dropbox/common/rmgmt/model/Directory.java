@@ -1,6 +1,7 @@
 package cn.dropbox.common.rmgmt.model;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import cn.dropbox.common.rmgmt.api.Resource;
 
@@ -8,8 +9,8 @@ public class Directory implements Resource {
 
 	String dirName;
 	String URI;
-	int numOfElements = -1;
-	List<File> files = new ArrayList<File>();
+	Date lastModified;
+    List<File> files = new ArrayList<File>();
 	List<Directory> directories = new ArrayList<Directory>();
     
     @Override
@@ -33,6 +34,12 @@ public class Directory implements Resource {
     public void setDirName(String dirName) {
         this.dirName = dirName;
     }
+    public Date getLastModified() {
+        return lastModified;
+    }
+    public void setLastModified(Date lastModified) {
+        this.lastModified = lastModified;
+    }    
     public List<File> getFiles() {
         return files;
     }
@@ -45,15 +52,8 @@ public class Directory implements Resource {
     public void setDirectories(List<Directory> directories) {
         this.directories = directories;
     }
-    public void setNumOfElements(int numOfElements) {
-        this.numOfElements = numOfElements;
-    }    
     public int getDirSize() {
-        if(numOfElements==-1) {
-            return getFiles().size() + getDirectories().size();
-        } else {
-            return numOfElements;
-        }
+        return getFiles().size() + getDirectories().size();
     }
     @Override
     public String toString() {
