@@ -2,6 +2,7 @@ package cn.dropbox.common.parser.impl;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -14,6 +15,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Text;
+import org.xml.sax.SAXException;
 
 import com.sun.org.apache.xml.internal.serialize.OutputFormat;
 import com.sun.org.apache.xml.internal.serialize.XMLSerializer;
@@ -78,6 +80,28 @@ public class XMLHelper implements XMLConstants {
         resDateEle.appendChild(resDateSecondEle);
         return resDateEle;
     }    
+    
+    public static Document getDocumentFromStream(InputStream xmlStream) {
+        // get the factory
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        // Using factory get an instance of document builder
+        DocumentBuilder db;
+        try {
+            db = dbf.newDocumentBuilder();
+            Document dom = db.parse(xmlStream);
+            return dom;
+        } catch (ParserConfigurationException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (SAXException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return null;
+    }
     
     /**
      * I take a xml element and the tag name, look for the tag and get
