@@ -1,9 +1,6 @@
 package cn.dropbox.server.rmgmt;
 
-import com.sun.jmx.snmp.UserAcl;
-
 import cn.dropbox.common.rmgmt.model.RType;
-import cn.dropbox.common.rmgmt.model.User;
 import cn.dropbox.server.rmgmt.api.ResourceMgr;
 import cn.dropbox.server.rmgmt.impl.DirectoryMgr;
 import cn.dropbox.server.rmgmt.impl.FileMgr;

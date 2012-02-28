@@ -6,20 +6,20 @@ import java.util.Date;
 import javax.activation.MimetypesFileTypeMap;
 
 import cn.dropbox.common.rmgmt.api.Resource;
+import cn.dropbox.common.rmgmt.model.Directory;
 import cn.dropbox.server.listen.ServerListen;
 import cn.dropbox.server.rmgmt.api.ResourceMgr;
 
 public class DirectoryMgr implements ResourceMgr {
 
-	public static void main(String[] args) {
-		String uri = "Kunal\\Kunal1\\Kunal3";
-		DirectoryMgr fmgr = new DirectoryMgr();
-		cn.dropbox.common.rmgmt.model.Directory res = new cn.dropbox.common.rmgmt.model.Directory();
-		res.setDirName("Kunal3");
-		res.setURI(uri);
-		fmgr.delete(uri);
-		//System.out.println(res.getURI()+" "+res.getDirSize());
-	}
+	/*
+	 * Testing public static void main(String[] args) { String uri =
+	 * "Kunal\\Kunal1\\Kunal3"; DirectoryMgr fmgr = new DirectoryMgr();
+	 * cn.dropbox.common.rmgmt.model.Directory res = new
+	 * cn.dropbox.common.rmgmt.model.Directory(); res.setDirName("Kunal3");
+	 * res.setURI(uri); fmgr.delete(uri);
+	 * //System.out.println(res.getURI()+" "+res.getDirSize()); }
+	 */
 
 	@Override
 	public Resource get(String uri) {
@@ -33,10 +33,9 @@ public class DirectoryMgr implements ResourceMgr {
 			for (int i = 0; i < list.length; i++) {
 				File tempFile = new File(ServerListen.DOCROOT + uri, list[i]);
 				if (tempFile.isDirectory()) {
-					cn.dropbox.common.rmgmt.model.Directory tempdirResource = new cn.dropbox.common.rmgmt.model.Directory();
+					Directory tempdirResource = new Directory();
 					tempdirResource.setDirName(tempFile.getName());
 					tempdirResource.setURI(uri + list[i]);
-					tempdirResource.setNumOfElements(tempFile.list().length);
 					dirResource.getDirectories().add(tempdirResource);
 				} else {
 					cn.dropbox.common.rmgmt.model.File tempfileResource = new cn.dropbox.common.rmgmt.model.File();
@@ -48,6 +47,28 @@ public class DirectoryMgr implements ResourceMgr {
 					MimetypesFileTypeMap mimetype = new MimetypesFileTypeMap();
 					tempfileResource.setMimeType(mimetype.getContentType(file));
 					dirResource.getFiles().add(tempfileResource);
+				}
+
+			}
+			for (int i = 0; i < dirResource.getDirectories().size(); i++) {
+				Directory subdirresource = dirResource.getDirectories().get(i);
+				File tempFile = new File(ServerListen.DOCROOT + uri,
+						subdirresource.getDirName());
+				String[] sublist = tempFile.list();
+				for (int j = 0; j < sublist.length; j++) {
+					File subTempFile = new File(ServerListen.DOCROOT + uri,
+							sublist[i]);
+					if (subTempFile.isDirectory()) {
+						Directory subtempdirResource = new Directory();
+						subtempdirResource.setDirName(subTempFile.getName());
+						subtempdirResource.setURI(uri + sublist[i]);
+						subdirresource.getDirectories().add(subtempdirResource);
+					} else {
+						cn.dropbox.common.rmgmt.model.File subtempfileResource = new cn.dropbox.common.rmgmt.model.File();
+						Date date = new Date(file.lastModified());
+						subtempfileResource.setLastModified(date);
+						subdirresource.getFiles().add(subtempfileResource);
+					}
 				}
 			}
 			return dirResource;
