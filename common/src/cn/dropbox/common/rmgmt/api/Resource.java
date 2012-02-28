@@ -9,5 +9,7 @@ public interface Resource {
     RType getType();
 
 	String getURI();
+	
+	void setURI(String uri);
 
 }
