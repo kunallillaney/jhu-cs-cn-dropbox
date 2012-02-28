@@ -5,10 +5,8 @@ import cn.dropbox.common.rmgmt.api.Resource;
 public class User implements Resource {
 
 	String userName;
-
 	String userid;
 	String URI;
-	Directory rootDirectory; // TODO: Kunal please remove this. This is not needed!
 
 	@Override
 	public RType getType() {
@@ -38,14 +36,6 @@ public class User implements Resource {
 
     public void setUserid(String userid) {
         this.userid = userid;
-    }
-
-    public Directory getRootDirectory() {
-        return rootDirectory;
-    }
-
-    public void setRootDirectory(Directory rootDirectory) {
-        this.rootDirectory = rootDirectory;
     }
 	
 }
