@@ -17,6 +17,11 @@ public class File implements Resource {
     public File(){
     }
     
+    @Override
+    public String getResourceName() {
+        return getFileName();
+    }
+    
 	@Override
 	public RType getType() {
 		return RType.FILE;
