@@ -22,6 +22,7 @@ import cn.dropbox.common.rmgmt.api.Resource;
 import cn.dropbox.common.rmgmt.model.Directory;
 import cn.dropbox.common.rmgmt.model.File;
 import cn.dropbox.common.rmgmt.model.RType;
+import cn.dropbox.server.listen.ServerListen;
 import cn.dropbox.server.parser.XMLUtil;
 
 public class DirectoryXMLHandler implements XMLHandler, XMLConstants {
@@ -97,7 +98,7 @@ public class DirectoryXMLHandler implements XMLHandler, XMLConstants {
         
         //ResourceURL which is ResourceURI
         Element resURLEle = dom.createElement(RESOURCE_URL_TAG);
-        Text resURLText = dom.createTextNode(XMLHelper.constructURI(dir));
+        Text resURLText = dom.createTextNode(constructURI(dir));
         resURLEle.appendChild(resURLText);
         resourceEle.appendChild(resURLEle);
         
@@ -136,7 +137,7 @@ public class DirectoryXMLHandler implements XMLHandler, XMLConstants {
         
         //ResourceURL which is ResourceURI
         Element resURLEle = dom.createElement(RESOURCE_URL_TAG);
-        Text resURLText = dom.createTextNode(XMLHelper.constructURI(file));
+        Text resURLText = dom.createTextNode(constructURI(file));
         resURLEle.appendChild(resURLText);
         resourceEle.appendChild(resURLEle);
         
@@ -191,4 +192,8 @@ public class DirectoryXMLHandler implements XMLHandler, XMLConstants {
         } 
     }
 
+    
+    public static String constructURI(Resource res) {
+        return ServerListen.DOCROOT + res.getURI(); // TODO: Prepend doc root
+    }
 }

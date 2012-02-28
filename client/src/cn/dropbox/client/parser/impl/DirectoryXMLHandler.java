@@ -137,4 +137,5 @@ public class DirectoryXMLHandler implements XMLHandler, XMLConstants {
         URI uri = new URI("http://localhost:8888/testuri/url");
         System.out.println(uri.getPath());
     }
+ 
 }

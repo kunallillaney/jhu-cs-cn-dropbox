@@ -136,8 +136,5 @@ public class XMLHelper implements XMLConstants {
         //in production application you would catch the exception
         return Integer.parseInt(getTextValue(ele,tagName));
     }
-    
-    public static String constructURI(Resource res) {
-        return "DOC_ROOT" + res.getURI(); // TODO: Prepend doc root
-    }
+
 }
