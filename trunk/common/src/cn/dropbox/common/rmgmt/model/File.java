@@ -8,12 +8,15 @@ import cn.dropbox.common.rmgmt.api.Resource;
 public class File implements Resource {
 
 	String fileName;
-	String fileSize;
+	int fileSize;
 	String URI;
     Date lastModified;
 	String mimeType;
     byte[] fileContents;
-
+    
+    public File(){
+    }
+    
 	@Override
 	public RType getType() {
 		return RType.FILE;
@@ -36,11 +39,11 @@ public class File implements Resource {
         this.fileName = fileName;
     }
 
-    public String getFileSize() {
+    public int getFileSize() {
         return fileSize;
     }
 
-    public void setFileSize(String fileSize) {
+    public void setFileSize(int fileSize) {
         this.fileSize = fileSize;
     }
 
