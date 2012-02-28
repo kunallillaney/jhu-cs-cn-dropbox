@@ -194,6 +194,6 @@ public class DirectoryXMLHandler implements XMLHandler, XMLConstants {
 
     
     public static String constructURI(Resource res) {
-        return ServerListen.DOCROOT + res.getURI(); // TODO: Prepend doc root
+        return res.getURI(); // TODO: Prepend doc root
     }
 }
