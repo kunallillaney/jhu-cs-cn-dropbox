@@ -4,9 +4,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
+import java.util.Iterator;
 import java.util.List;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -16,13 +15,13 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Text;
 
+import cn.dropbox.common.parser.api.XMLConstants;
 import cn.dropbox.common.parser.api.XMLHandler;
 import cn.dropbox.common.parser.impl.XMLHelper;
 import cn.dropbox.common.rmgmt.api.Resource;
 import cn.dropbox.common.rmgmt.model.Directory;
 import cn.dropbox.common.rmgmt.model.File;
 import cn.dropbox.common.rmgmt.model.RType;
-import cn.dropbox.common.parser.api.XMLConstants;
 import cn.dropbox.server.parser.XMLUtil;
 
 public class DirectoryXMLHandler implements XMLHandler, XMLConstants {
@@ -96,6 +95,26 @@ public class DirectoryXMLHandler implements XMLHandler, XMLConstants {
         resSizeEle.appendChild(resSizeText);
         resourceEle.appendChild(resSizeEle);
         
+        //ResourceURL which is ResourceURI
+        Element resURLEle = dom.createElement(RESOURCE_URL_TAG);
+        Text resURLText = dom.createTextNode(XMLHelper.constructURI(dir));
+        resURLEle.appendChild(resURLText);
+        resourceEle.appendChild(resURLEle);
+        
+        // Iterate through the files and determine which is the last modified file in the directory
+        long lastModifiedFileTime = dir.getLastModified().getTime();
+        List<File> fileList = dir.getFiles();
+        for (Iterator itr = fileList.iterator(); itr.hasNext();) {
+            File file = (File) itr.next();
+            if(file.getLastModified().getTime() > lastModifiedFileTime) {
+                lastModifiedFileTime = file.getLastModified().getTime(); 
+            }
+        }
+        
+        //ResourceDate which is Date
+        Element resDateEle = XMLHelper.constructDateElement(dom, new Date(lastModifiedFileTime));
+        resourceEle.appendChild(resDateEle);
+        
         return resourceEle;
     }
 
@@ -116,7 +135,7 @@ public class DirectoryXMLHandler implements XMLHandler, XMLConstants {
         resourceEle.appendChild(resSizeEle);
         
         //ResourceURL which is ResourceURI
-        Element resURLEle = dom.createElement(RESOURCE_SIZE_TAG);
+        Element resURLEle = dom.createElement(RESOURCE_URL_TAG);
         Text resURLText = dom.createTextNode(XMLHelper.constructURI(file));
         resURLEle.appendChild(resURLText);
         resourceEle.appendChild(resURLEle);
@@ -128,34 +147,7 @@ public class DirectoryXMLHandler implements XMLHandler, XMLConstants {
         resourceEle.appendChild(resTypeEle);
         
         //ResourceDate which is Date
-        Element resDateEle = dom.createElement(RESOURCE_DATE_TAG);
-        GregorianCalendar lastModifiedCal = new GregorianCalendar();
-        lastModifiedCal.setTime(file.getLastModified());
-        
-        Element resDateYearEle = dom.createElement(RESOURCE_DATE_YEAR_TAG);
-        Text resDateYearText = dom.createTextNode(Integer.toString(lastModifiedCal.get(Calendar.YEAR)));
-        resDateYearEle.appendChild(resDateYearText);
-        resDateEle.appendChild(resDateYearEle);
-        Element resDateMonthEle = dom.createElement(RESOURCE_DATE_MONTH_TAG);
-        Text resDateMonthText = dom.createTextNode(Integer.toString(lastModifiedCal.get(Calendar.MONTH)));
-        resDateMonthEle.appendChild(resDateMonthText);
-        resDateEle.appendChild(resDateMonthEle);
-        Element resDateDayEle = dom.createElement(RESOURCE_DATE_DAY_TAG);
-        Text resDateDayText = dom.createTextNode(Integer.toString(lastModifiedCal.get(Calendar.DATE)));
-        resDateDayEle.appendChild(resDateDayText);
-        resDateEle.appendChild(resDateDayEle);
-        Element resDateHourEle = dom.createElement(RESOURCE_DATE_HOUR_TAG);
-        Text resDateHourText = dom.createTextNode(Integer.toString(lastModifiedCal.get(Calendar.HOUR)));
-        resDateHourEle.appendChild(resDateHourText);
-        resDateEle.appendChild(resDateHourEle);
-        Element resDateMinuteEle = dom.createElement(RESOURCE_DATE_MINUTE_TAG);
-        Text resDateMinuteText = dom.createTextNode(Integer.toString(lastModifiedCal.get(Calendar.MINUTE)));
-        resDateMinuteEle.appendChild(resDateMinuteText);
-        resDateEle.appendChild(resDateMinuteEle);        Element resDateSecondEle = dom.createElement(RESOURCE_DATE_SECOND_TAG);
-        Text resDateSecondText = dom.createTextNode(Integer.toString(lastModifiedCal.get(Calendar.SECOND)));
-        resDateSecondEle.appendChild(resDateSecondText);
-        resDateEle.appendChild(resDateSecondEle);
-        
+        Element resDateEle = XMLHelper.constructDateElement(dom, file.getLastModified());
         resourceEle.appendChild(resDateEle);
         
         return resourceEle;
@@ -183,6 +175,7 @@ public class DirectoryXMLHandler implements XMLHandler, XMLConstants {
                 Directory d = new Directory();
                 d.setDirName("DirName"+i);
                 d.setURI("uri/dir"+i);
+                d.setLastModified(new Date(new Date().getTime() + i*1000*1000*1000));
                 testDirs.add(d);
             }
             ((Directory)res).setFiles(testFiles);

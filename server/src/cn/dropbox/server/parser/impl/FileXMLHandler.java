@@ -60,7 +60,6 @@ public class FileXMLHandler implements XMLHandler, XMLConstants {
     public String constructXML(Resource resource) {
         File res = (File)resource;
         String retXML = null;
-        //get an instance of factory
         try {
             Document dom = XMLHelper.getDOMMaker();
             

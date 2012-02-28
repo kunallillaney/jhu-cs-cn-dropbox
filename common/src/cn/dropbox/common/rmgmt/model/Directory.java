@@ -11,6 +11,10 @@ public class Directory implements Resource {
 	String dirName;
 	String URI;
 	Date lastModified;
+	int numOfElements = -1;
+    public void setNumOfElements(int numOfElements) {
+        this.numOfElements = numOfElements;
+    }
     List<File> files = new ArrayList<File>();
 	List<Directory> directories = new ArrayList<Directory>();
     
@@ -54,12 +58,19 @@ public class Directory implements Resource {
         this.directories = directories;
     }
     public int getDirSize() {
-        return getFiles().size() + getDirectories().size();
+        if(numOfElements == -1) {
+            return getFiles().size() + getDirectories().size();
+        } else {
+            return numOfElements;
+        }
+        
     }
     @Override
     public String toString() {
         return "<"+dirName+">|" +
-        		"<"+getDirSize()+">";
+        		"<"+getDirSize()+">|" +
+        		"<"+URI+">|" +
+        		"<"+lastModified+">";
     }
     public void setLastModified(int year, int month, int dayOfMonth, int hourOfDay, int minute,
             int second) {
