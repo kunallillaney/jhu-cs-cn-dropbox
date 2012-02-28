@@ -13,6 +13,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import cn.dropbox.common.parser.api.XMLConstants;
 import cn.dropbox.common.parser.api.XMLHandler;
 import cn.dropbox.common.rmgmt.api.Resource;
 import cn.dropbox.common.rmgmt.model.RType;
