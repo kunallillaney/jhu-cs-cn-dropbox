@@ -84,7 +84,7 @@ public class File implements Resource {
         		"<"+mimeType+">|" +
         		"<"+URI+">|" +
         		"<"+lastModified+">|" +
-                "<"+fileContents+">";
+                "<"+(fileContents==null?"":new String(fileContents))+">";
     }
 
     public void setLastModified(int year, int month, int dayOfMonth, int hourOfDay, int minute,

@@ -61,6 +61,7 @@ public class ReqHandler implements HttpRequestHandler {
 				HttpEntity entity = ((HttpEntityEnclosingRequest) request)
 						.getEntity();
 				Resource rsrc = XMLUtil.constructResource(entity.getContent());
+				rsrc.setURI(target);
 				ResourceMgr rmgr = null;
 				if (rsrc.getType() == RType.FILE) {
 					rmgr = ResourceMagrFactory.getResourceMgr(RType.FILE);
