@@ -58,11 +58,11 @@ public class DirectoryMgr implements ResourceMgr {
 				String[] sublist = tempFile.list();
 				for (int j = 0; j < sublist.length; j++) {
 					File subTempFile = new File(ServerListen.DOCROOT + uri + "/" + subdirresource.getDirName(),
-							sublist[i]);
+							sublist[j]);
 					if (subTempFile.isDirectory()) {
 						Directory subtempdirResource = new Directory();
 						subtempdirResource.setDirName(subTempFile.getName());
-						subtempdirResource.setURI(uri + "/" + subdirresource.getDirName() + "/" + sublist[i]);
+						subtempdirResource.setURI(uri + "/" + subdirresource.getDirName() + "/" + sublist[j]);
 						subdirresource.getDirectories().add(subtempdirResource);
 					} else {
 						cn.dropbox.common.rmgmt.model.File subtempfileResource = new cn.dropbox.common.rmgmt.model.File();
