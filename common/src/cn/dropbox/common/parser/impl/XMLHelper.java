@@ -1,8 +1,8 @@
 package cn.dropbox.common.parser.impl;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringWriter;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -10,6 +10,12 @@ import java.util.GregorianCalendar;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -17,12 +23,7 @@ import org.w3c.dom.NodeList;
 import org.w3c.dom.Text;
 import org.xml.sax.SAXException;
 
-import com.sun.org.apache.xml.internal.serialize.OutputFormat;
-import com.sun.org.apache.xml.internal.serialize.XMLSerializer;
-
 import cn.dropbox.common.parser.api.XMLConstants;
-import cn.dropbox.common.rmgmt.api.Resource;
-import cn.dropbox.common.rmgmt.model.File;
 
 public class XMLHelper implements XMLConstants {
     
@@ -37,7 +38,27 @@ public class XMLHelper implements XMLConstants {
     }
     
     public static String constructXMLString(Document dom) throws IOException {
+        String retXMLStr = null;
+        TransformerFactory factory = TransformerFactory.newInstance();
+        Transformer transformer;
+        try {
+            transformer = factory.newTransformer();
+            StringWriter writer = new StringWriter();
+            StreamResult result = new StreamResult(writer);
+            DOMSource source = new DOMSource(dom);
+            transformer.transform(source, result);
+            writer.close();
+            retXMLStr = writer.toString();        
+        } catch (TransformerConfigurationException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (TransformerException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        /*
         // Make a string out of the DOM object
+        System.out.println(dom.toString());
         OutputFormat format = new OutputFormat(dom);
         format.setIndenting(true);
         ByteArrayOutputStream byteoutStream = new ByteArrayOutputStream();
@@ -45,7 +66,9 @@ public class XMLHelper implements XMLConstants {
         serializer.serialize(dom);
         String retXMLStr = new String(byteoutStream.toByteArray());
         byteoutStream.close();
+        */
         return retXMLStr;
+        
     }
     
 
