@@ -23,6 +23,10 @@ public class Directory implements Resource {
         return getDirName();
     }
     @Override
+    public void setResourceName(String name) {
+    	setDirName(name);
+    }
+    @Override
 	public RType getType() {
 	    return RType.DIRECTORY;
     }
