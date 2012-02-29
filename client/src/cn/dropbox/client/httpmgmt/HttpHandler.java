@@ -16,6 +16,7 @@ import org.apache.http.impl.DefaultConnectionReuseStrategy;
 import org.apache.http.impl.DefaultHttpClientConnection;
 import org.apache.http.message.BasicHttpEntityEnclosingRequest;
 import org.apache.http.message.BasicHttpRequest;
+import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.params.SyncBasicHttpParams;
@@ -72,7 +73,7 @@ public class HttpHandler {
 
 	public void executePUT(Resource resource) {
 
-		HttpParams params = new SyncBasicHttpParams();
+		HttpParams params = new BasicHttpParams();
 		HttpProtocolParams.setVersion(params, HttpVersion.HTTP_1_1);
 		HttpProtocolParams.setContentCharset(params, "UTF-8");
 		HttpProtocolParams.setUserAgent(params, "HttpComponents/1.1");
@@ -141,7 +142,7 @@ public class HttpHandler {
 	public Resource executeGET(String URI, RType resType) {
 		Resource rsrc = null;
 
-		HttpParams params = new SyncBasicHttpParams();
+		HttpParams params = new BasicHttpParams();
 		HttpProtocolParams.setVersion(params, HttpVersion.HTTP_1_1);
 		HttpProtocolParams.setContentCharset(params, "UTF-8");
 		HttpProtocolParams.setUserAgent(params, "HttpComponents/1.1");
@@ -164,19 +165,10 @@ public class HttpHandler {
 
 			HttpRequestExecutor httpexecutor = new HttpRequestExecutor();
 
-			HttpProcessor httpproc = new ImmutableHttpProcessor(
-					new HttpRequestInterceptor[] {
-							// Required protocol interceptors
-							new RequestContent(), new RequestTargetHost(),
-							// Recommended protocol interceptors
-							new RequestConnControl(), new RequestUserAgent(),
-							new RequestExpectContinue() });
 			request.setParams(params);
-			httpexecutor.preProcess(request, httpproc, context);
 			HttpResponse response = httpexecutor
 					.execute(request, conn, context);
 			response.setParams(params);
-			httpexecutor.postProcess(response, httpproc, context);
 
 			HttpEntity entity = response.getEntity();
 			XMLHandler xmlHandle = XMLHandlerFactory.getXMLHandler(resType);
