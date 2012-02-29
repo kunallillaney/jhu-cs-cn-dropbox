@@ -192,6 +192,12 @@ public class HttpHandler {
 			XMLHandler xmlHandle = XMLHandlerFactory.getXMLHandler(resType);
 			Document dom = XMLHelper.getDocumentFromStream(entity.getContent());
 			rsrc = xmlHandle.constructResourceObject(dom);
+			// Remove trailing slash
+			int i = URI.length()-1;
+			for(;i>0 && URI.charAt(i)!='/';i--);
+			String tempURI = URI.substring(0, i);
+			String nameExtracted = tempURI.substring(tempURI.lastIndexOf('/')+1);
+			rsrc.setResourceName(nameExtracted);
 			rsrc.setURI(URI);
 			if (!connStrategy.keepAlive(response, context)) {
 				conn.close();
