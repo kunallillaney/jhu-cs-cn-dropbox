@@ -21,7 +21,10 @@ public class File implements Resource {
     public String getResourceName() {
         return getFileName();
     }
-    
+    @Override
+    public void setResourceName(String name) {
+    	setFileName(name);
+    }
 	@Override
 	public RType getType() {
 		return RType.FILE;

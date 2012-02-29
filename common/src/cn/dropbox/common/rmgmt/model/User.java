@@ -13,6 +13,11 @@ public class User implements Resource {
         return getUserName();
     }
 	
+    @Override
+    public void setResourceName(String name) {
+    	setUserName(name);
+    }
+    
 	@Override
 	public RType getType() {
 	    return RType.USERACCOUNT;
