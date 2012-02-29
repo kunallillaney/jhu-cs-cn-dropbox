@@ -3,12 +3,12 @@ package cn.dropbox.client.httpmgmt;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.Date;
 
 import org.apache.http.ConnectionReuseStrategy;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
-import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpVersion;
 import org.apache.http.entity.StringEntity;
@@ -21,11 +21,10 @@ import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.params.SyncBasicHttpParams;
 import org.apache.http.protocol.BasicHttpContext;
+import org.apache.http.protocol.BasicHttpProcessor;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HttpContext;
-import org.apache.http.protocol.HttpProcessor;
 import org.apache.http.protocol.HttpRequestExecutor;
-import org.apache.http.protocol.ImmutableHttpProcessor;
 import org.apache.http.protocol.RequestConnControl;
 import org.apache.http.protocol.RequestContent;
 import org.apache.http.protocol.RequestExpectContinue;
@@ -37,6 +36,8 @@ import cn.dropbox.client.parser.XMLHandlerFactory;
 import cn.dropbox.common.parser.api.XMLHandler;
 import cn.dropbox.common.parser.impl.XMLHelper;
 import cn.dropbox.common.rmgmt.api.Resource;
+import cn.dropbox.common.rmgmt.model.Directory;
+import cn.dropbox.common.rmgmt.model.File;
 import cn.dropbox.common.rmgmt.model.RType;
 
 public class HttpHandler {
@@ -79,14 +80,23 @@ public class HttpHandler {
 		HttpProtocolParams.setUserAgent(params, "HttpComponents/1.1");
 		HttpProtocolParams.setUseExpectContinue(params, true);
 
-		HttpProcessor httpproc = new ImmutableHttpProcessor(
+		/*
+		HttpProcessor httpproc1 = new ImmutableHttpProcessor(
 				new HttpRequestInterceptor[] {
 						// Required protocol interceptors
 						new RequestContent(), new RequestTargetHost(),
 						// Recommended protocol interceptors
 						new RequestConnControl(), new RequestUserAgent(),
 						new RequestExpectContinue() });
-
+		*/
+		BasicHttpProcessor httpproc = new BasicHttpProcessor();
+		httpproc.addInterceptor(new RequestContent());
+		httpproc.addInterceptor(new RequestTargetHost());
+		httpproc.addInterceptor(new RequestConnControl());
+		httpproc.addInterceptor(new RequestUserAgent());
+		httpproc.addInterceptor(new RequestExpectContinue());
+		
+		
 		HttpRequestExecutor httpexecutor = new HttpRequestExecutor();
 
 		HttpContext context = new BasicHttpContext(null);
@@ -162,14 +172,23 @@ public class HttpHandler {
 				conn.bind(socket, params);
 			}
 			BasicHttpRequest request = new BasicHttpRequest("GET", URI);
-
+	        
+			BasicHttpProcessor httpproc = new BasicHttpProcessor();
+	        httpproc.addInterceptor(new RequestContent());
+	        httpproc.addInterceptor(new RequestTargetHost());
+	        httpproc.addInterceptor(new RequestConnControl());
+	        httpproc.addInterceptor(new RequestUserAgent());
+	        httpproc.addInterceptor(new RequestExpectContinue());
+	        
 			HttpRequestExecutor httpexecutor = new HttpRequestExecutor();
 
 			request.setParams(params);
+			httpexecutor.preProcess(request, httpproc, context);
 			HttpResponse response = httpexecutor
 					.execute(request, conn, context);
 			response.setParams(params);
-
+			httpexecutor.postProcess(response, httpproc, context);
+			
 			HttpEntity entity = response.getEntity();
 			XMLHandler xmlHandle = XMLHandlerFactory.getXMLHandler(resType);
 			Document dom = XMLHelper.getDocumentFromStream(entity.getContent());
@@ -210,14 +229,21 @@ public class HttpHandler {
 		HttpProtocolParams.setUserAgent(params, "HttpComponents/1.1");
 		HttpProtocolParams.setUseExpectContinue(params, true);
 
-		HttpProcessor httpproc = new ImmutableHttpProcessor(
+/*		HttpProcessor httpproc = new ImmutableHttpProcessor(
 				new HttpRequestInterceptor[] {
 						// Required protocol interceptors
 						new RequestContent(), new RequestTargetHost(),
 						// Recommended protocol interceptors
 						new RequestConnControl(), new RequestUserAgent(),
-						new RequestExpectContinue() });
+						new RequestExpectContinue() });*/
 
+        BasicHttpProcessor httpproc = new BasicHttpProcessor();
+        httpproc.addInterceptor(new RequestContent());
+        httpproc.addInterceptor(new RequestTargetHost());
+        httpproc.addInterceptor(new RequestConnControl());
+        httpproc.addInterceptor(new RequestUserAgent());
+        httpproc.addInterceptor(new RequestExpectContinue());
+        
 		HttpRequestExecutor httpexecutor = new HttpRequestExecutor();
 
 		HttpContext context = new BasicHttpContext(null);
@@ -280,4 +306,34 @@ public class HttpHandler {
 		this.authHeader = authHeader;
 	}
 
+	public static void testGet(HttpHandler httpHandler) {
+        Resource resource = httpHandler.executeGET("/kunal/testdir/", RType.DIRECTORY);
+        System.out.println(resource);
+    }
+    private static void testFilePut(HttpHandler httpHandler) {
+        File resource = new File();
+        resource.setFileName("newfile.txt");
+        resource.setFileSize(100);
+        resource.setLastModified(new Date());
+        resource.setMimeType("app/pdf");
+        resource.setFileContents("I am being uploaded again...".getBytes());
+        resource.setURI("/kunal/testdir/subdir/");
+        httpHandler.executePUT(resource);
+    }
+    private static void testDirPut(HttpHandler httpHandler) {
+        Directory resource = new Directory();
+        resource.setDirName("newdir");
+        resource.setURI("/kunal/testdir/subdir/");
+        httpHandler.executePUT(resource);
+    }
+    
+	public static void main(String[] args) {
+        System.out.println("Before");
+	    HttpHandler httpHandler = HttpHandler.getInstance();
+        httpHandler.init("kunal", null, "localhost", 8080);
+        //testGet(httpHandler);
+        testFilePut(httpHandler);
+        //testDirPut(httpHandler);
+        System.out.println("After");
+    }
 }
