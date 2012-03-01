@@ -10,7 +10,9 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.apache.http.HttpVersion;
+import org.apache.http.StatusLine;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.DefaultConnectionReuseStrategy;
 import org.apache.http.impl.DefaultHttpClientConnection;
@@ -71,7 +73,7 @@ public class HttpHandler {
 		this.port = port;
 	}
 
-	public void executePUT(Resource resource) {
+	public void executePUT(Resource resource) throws HttpServerException, HttpClientException {
 
 		HttpParams params = new BasicHttpParams();
 		HttpProtocolParams.setVersion(params, HttpVersion.HTTP_1_1);
@@ -80,22 +82,19 @@ public class HttpHandler {
 		HttpProtocolParams.setUseExpectContinue(params, true);
 
 		/*
-		HttpProcessor httpproc1 = new ImmutableHttpProcessor(
-				new HttpRequestInterceptor[] {
-						// Required protocol interceptors
-						new RequestContent(), new RequestTargetHost(),
-						// Recommended protocol interceptors
-						new RequestConnControl(), new RequestUserAgent(),
-						new RequestExpectContinue() });
-		*/
+		 * HttpProcessor httpproc1 = new ImmutableHttpProcessor( new
+		 * HttpRequestInterceptor[] { // Required protocol interceptors new
+		 * RequestContent(), new RequestTargetHost(), // Recommended protocol
+		 * interceptors new RequestConnControl(), new RequestUserAgent(), new
+		 * RequestExpectContinue() });
+		 */
 		BasicHttpProcessor httpproc = new BasicHttpProcessor();
 		httpproc.addInterceptor(new RequestContent());
 		httpproc.addInterceptor(new RequestTargetHost());
 		httpproc.addInterceptor(new RequestConnControl());
 		httpproc.addInterceptor(new RequestUserAgent());
 		httpproc.addInterceptor(new RequestExpectContinue());
-		
-		
+
 		HttpRequestExecutor httpexecutor = new HttpRequestExecutor();
 
 		HttpContext context = new BasicHttpContext(null);
@@ -120,12 +119,16 @@ public class HttpHandler {
 			BasicHttpEntityEnclosingRequest request = new BasicHttpEntityEnclosingRequest(
 					"PUT", resource.getURI());
 			request.setEntity(requestBody);
-
 			request.setParams(params);
 			httpexecutor.preProcess(request, httpproc, context);
 			HttpResponse response = httpexecutor
 					.execute(request, conn, context);
 			response.setParams(params);
+			StatusLine status = response.getStatusLine();
+			if(status.getStatusCode()!=HttpStatus.SC_OK)
+			{
+				throw new HttpServerException(status.getStatusCode(), status.getReasonPhrase(), null);
+			}
 			httpexecutor.postProcess(response, httpproc, context);
 			if (!connStrategy.keepAlive(response, context)) {
 				conn.close();
@@ -133,22 +136,19 @@ public class HttpHandler {
 				System.out.println("Connection kept alive...");
 			}
 		} catch (HttpException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			throw new HttpClientException(e.getMessage(), e);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			throw new HttpClientException(e.getMessage(), e);
 		} finally {
 			try {
 				conn.close();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				throw new HttpClientException(e.getMessage(), e);				
 			}
 		}
 	}
 
-	public Resource executeGET(String URI, RType resType) {
+	public Resource executeGET(String URI, RType resType) throws HttpServerException, HttpClientException {
 		Resource rsrc = null;
 
 		HttpParams params = new BasicHttpParams();
@@ -171,14 +171,14 @@ public class HttpHandler {
 				conn.bind(socket, params);
 			}
 			BasicHttpRequest request = new BasicHttpRequest("GET", URI);
-	        
+
 			BasicHttpProcessor httpproc = new BasicHttpProcessor();
-	        httpproc.addInterceptor(new RequestContent());
-	        httpproc.addInterceptor(new RequestTargetHost());
-	        httpproc.addInterceptor(new RequestConnControl());
-	        httpproc.addInterceptor(new RequestUserAgent());
-	        httpproc.addInterceptor(new RequestExpectContinue());
-	        
+			httpproc.addInterceptor(new RequestContent());
+			httpproc.addInterceptor(new RequestTargetHost());
+			httpproc.addInterceptor(new RequestConnControl());
+			httpproc.addInterceptor(new RequestUserAgent());
+			httpproc.addInterceptor(new RequestExpectContinue());
+
 			HttpRequestExecutor httpexecutor = new HttpRequestExecutor();
 
 			request.setParams(params);
@@ -187,18 +187,25 @@ public class HttpHandler {
 					.execute(request, conn, context);
 			response.setParams(params);
 			httpexecutor.postProcess(response, httpproc, context);
-			
+
 			HttpEntity entity = response.getEntity();
 			XMLHandler xmlHandle = XMLHandlerFactory.getXMLHandler(resType);
 			Document dom = XMLHelper.getDocumentFromStream(entity.getContent());
 			rsrc = xmlHandle.constructResourceObject(dom);
 			// Remove trailing slash
-			int i = URI.length()-1;
-			for(;i>0 && URI.charAt(i)!='/';i--);
+			int i = URI.length() - 1;
+			for (; i > 0 && URI.charAt(i) != '/'; i--)
+				;
 			String tempURI = URI.substring(0, i);
-			String nameExtracted = tempURI.substring(tempURI.lastIndexOf('/')+1);
+			String nameExtracted = tempURI
+					.substring(tempURI.lastIndexOf('/') + 1);
 			rsrc.setResourceName(nameExtracted);
 			rsrc.setURI(URI);
+			StatusLine status = response.getStatusLine();
+			if(status.getStatusCode()!=HttpStatus.SC_OK)
+			{
+				throw new HttpServerException(status.getStatusCode(), status.getReasonPhrase(), null);
+			}
 			if (!connStrategy.keepAlive(response, context)) {
 				conn.close();
 			} else {
@@ -206,27 +213,23 @@ public class HttpHandler {
 			}
 
 		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			throw new HttpClientException(e.getMessage(), e);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			throw new HttpClientException(e.getMessage(), e);
 		} catch (HttpException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			throw new HttpClientException(e.getMessage(), e);
 		} finally {
 			try {
 				conn.close();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				throw new HttpClientException(e.getMessage(), e);
 			}
 		}
 
 		return rsrc;
 	}
 
-	public void executeDelete(String URI) {
+	public void executeDelete(String URI) throws HttpClientException, HttpServerException {
 
 		HttpParams params = new BasicHttpParams();
 		HttpProtocolParams.setVersion(params, HttpVersion.HTTP_1_1);
@@ -234,21 +237,21 @@ public class HttpHandler {
 		HttpProtocolParams.setUserAgent(params, "HttpComponents/1.1");
 		HttpProtocolParams.setUseExpectContinue(params, true);
 
-/*		HttpProcessor httpproc = new ImmutableHttpProcessor(
-				new HttpRequestInterceptor[] {
-						// Required protocol interceptors
-						new RequestContent(), new RequestTargetHost(),
-						// Recommended protocol interceptors
-						new RequestConnControl(), new RequestUserAgent(),
-						new RequestExpectContinue() });*/
+		/*
+		 * HttpProcessor httpproc = new ImmutableHttpProcessor( new
+		 * HttpRequestInterceptor[] { // Required protocol interceptors new
+		 * RequestContent(), new RequestTargetHost(), // Recommended protocol
+		 * interceptors new RequestConnControl(), new RequestUserAgent(), new
+		 * RequestExpectContinue() });
+		 */
 
-        BasicHttpProcessor httpproc = new BasicHttpProcessor();
-        httpproc.addInterceptor(new RequestContent());
-        httpproc.addInterceptor(new RequestTargetHost());
-        httpproc.addInterceptor(new RequestConnControl());
-        httpproc.addInterceptor(new RequestUserAgent());
-        httpproc.addInterceptor(new RequestExpectContinue());
-        
+		BasicHttpProcessor httpproc = new BasicHttpProcessor();
+		httpproc.addInterceptor(new RequestContent());
+		httpproc.addInterceptor(new RequestTargetHost());
+		httpproc.addInterceptor(new RequestConnControl());
+		httpproc.addInterceptor(new RequestUserAgent());
+		httpproc.addInterceptor(new RequestExpectContinue());
+
 		HttpRequestExecutor httpexecutor = new HttpRequestExecutor();
 
 		HttpContext context = new BasicHttpContext(null);
@@ -272,6 +275,11 @@ public class HttpHandler {
 			HttpResponse response = httpexecutor
 					.execute(request, conn, context);
 			response.setParams(params);
+			StatusLine status = response.getStatusLine();
+			if(status.getStatusCode()!=HttpStatus.SC_OK)
+			{
+				throw new HttpServerException(status.getStatusCode(), status.getReasonPhrase(), null);
+			}
 			httpexecutor.postProcess(response, httpproc, context);
 			if (!connStrategy.keepAlive(response, context)) {
 				conn.close();
@@ -280,17 +288,14 @@ public class HttpHandler {
 			}
 
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			throw new HttpClientException(e.getMessage(), e);
 		} catch (HttpException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			throw new HttpClientException(e.getMessage(), e);
 		} finally {
 			try {
 				conn.close();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				throw new HttpClientException(e.getMessage(), e);
 			}
 		}
 	}
@@ -311,34 +316,37 @@ public class HttpHandler {
 		this.authHeader = authHeader;
 	}
 
-	public static void testGet(HttpHandler httpHandler) {
-        Resource resource = httpHandler.executeGET("/kunal/testdir/", RType.DIRECTORY);
-        System.out.println(resource);
-    }
-    private static void testFilePut(HttpHandler httpHandler) {
-        File resource = new File();
-        resource.setFileName("newfile.txt");
-        resource.setFileSize(100);
-        resource.setLastModified(new Date());
-        resource.setMimeType("app/pdf");
-        resource.setFileContents("I am being uploaded again...".getBytes());
-        resource.setURI("/kunal/testdir/subdir/");
-        httpHandler.executePUT(resource);
-    }
-    private static void testDirPut(HttpHandler httpHandler) {
-        Directory resource = new Directory();
-        resource.setDirName("newdir");
-        resource.setURI("/kunal/testdir/subdir/");
-        httpHandler.executePUT(resource);
-    }
-    
-	public static void main(String[] args) {
-        System.out.println("Before");
-	    HttpHandler httpHandler = HttpHandler.getInstance();
-        httpHandler.init("kunal", null, "localhost", 8080);
-        //testGet(httpHandler);
-        testFilePut(httpHandler);
-        //testDirPut(httpHandler);
-        System.out.println("After");
-    }
+	public static void testGet(HttpHandler httpHandler) throws HttpServerException, HttpClientException {
+		Resource resource = httpHandler.executeGET("/kunal/testdir/",
+				RType.DIRECTORY);
+		System.out.println(resource);
+	}
+
+	private static void testFilePut(HttpHandler httpHandler) throws HttpServerException, HttpClientException {
+		File resource = new File();
+		resource.setFileName("newfile.txt");
+		resource.setFileSize(100);
+		resource.setLastModified(new Date());
+		resource.setMimeType("app/pdf");
+		resource.setFileContents("I am being uploaded again...".getBytes());
+		resource.setURI("/kunal/testdir/subdir/");
+		httpHandler.executePUT(resource);
+	}
+
+	private static void testDirPut(HttpHandler httpHandler) throws HttpServerException, HttpClientException {
+		Directory resource = new Directory();
+		resource.setDirName("newdir");
+		resource.setURI("/kunal/testdir/subdir/");
+		httpHandler.executePUT(resource);
+	}
+
+	public static void main(String[] args) throws HttpServerException, HttpClientException {
+		System.out.println("Before");
+		HttpHandler httpHandler = HttpHandler.getInstance();
+		httpHandler.init("kunal", null, "localhost", 8080);
+		// testGet(httpHandler);
+		testFilePut(httpHandler);
+		// testDirPut(httpHandler);
+		System.out.println("After");
+	}
 }
