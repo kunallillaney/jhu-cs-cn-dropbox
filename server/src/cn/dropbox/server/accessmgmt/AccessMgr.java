@@ -35,6 +35,8 @@ public class AccessMgr {
             URI resolvedURI = baseUri.resolve(toberesolvedUri);
             String resolvedURIStr = resolvedURI.getPath();
             
+            if(true) return; // TODO: Remove this when Aithentoication is in place.
+            
             if(!resolvedURIStr.startsWith(UserThreadLocal.getUser().getUserName()) 
                     || resolvedURIStr.contains("..")) {
                 throw new ForbiddenException(ForbiddenException.FORBIDDEN, "URI Passed is invalid or user is not authorized to access the same - "+passedURI);
