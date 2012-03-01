@@ -193,10 +193,9 @@ public class HttpHandler {
 			Document dom = XMLHelper.getDocumentFromStream(entity.getContent());
 			rsrc = xmlHandle.constructResourceObject(dom);
 			// Remove trailing slash
-			int i = URI.length() - 1;
-			for (; i > 0 && URI.charAt(i) != '/'; i--)
-				;
-			String tempURI = URI.substring(0, i);
+			int i = URI.length()-1;
+			for(;i>0 && URI.charAt(i)=='/';i--);
+			String tempURI = URI.substring(0, i+1);			
 			String nameExtracted = tempURI
 					.substring(tempURI.lastIndexOf('/') + 1);
 			rsrc.setResourceName(nameExtracted);
@@ -317,36 +316,41 @@ public class HttpHandler {
 	}
 
 	public static void testGet(HttpHandler httpHandler) throws HttpServerException, HttpClientException {
-		Resource resource = httpHandler.executeGET("/kunal/testdir/",
-				RType.DIRECTORY);
-		System.out.println(resource);
-	}
-
-	private static void testFilePut(HttpHandler httpHandler) throws HttpServerException, HttpClientException {
-		File resource = new File();
-		resource.setFileName("newfile.txt");
-		resource.setFileSize(100);
-		resource.setLastModified(new Date());
-		resource.setMimeType("app/pdf");
-		resource.setFileContents("I am being uploaded again...".getBytes());
-		resource.setURI("/kunal/testdir/subdir/");
-		httpHandler.executePUT(resource);
-	}
-
-	private static void testDirPut(HttpHandler httpHandler) throws HttpServerException, HttpClientException {
-		Directory resource = new Directory();
-		resource.setDirName("newdir");
-		resource.setURI("/kunal/testdir/subdir/");
-		httpHandler.executePUT(resource);
-	}
-
-	public static void main(String[] args) throws HttpServerException, HttpClientException {
-		System.out.println("Before");
-		HttpHandler httpHandler = HttpHandler.getInstance();
-		httpHandler.init("kunal", null, "localhost", 8080);
-		// testGet(httpHandler);
-		testFilePut(httpHandler);
-		// testDirPut(httpHandler);
-		System.out.println("After");
-	}
+        Resource resource = httpHandler.executeGET("/kunal/testdir/", RType.DIRECTORY);
+        System.out.println(resource);
+    }
+    private static void testFilePut(HttpHandler httpHandler) throws HttpServerException, HttpClientException {
+        File resource = new File();
+        resource.setFileName("newfile.txt");
+        resource.setFileSize(100);
+        resource.setLastModified(new Date());
+        resource.setMimeType("app/pdf");
+        resource.setFileContents("I am being uploaded again...".getBytes());
+        resource.setURI("/kunal/testdir/subdir/");
+        httpHandler.executePUT(resource);
+    }
+    private static void testDirPut(HttpHandler httpHandler) throws HttpServerException, HttpClientException {
+        Directory resource = new Directory();
+        resource.setDirName("newdir");
+        resource.setURI("/kunal/");
+        httpHandler.executePUT(resource);
+    }
+    
+	public static void main(String[] args) {
+        System.out.println("Before");
+	    HttpHandler httpHandler = HttpHandler.getInstance();
+        httpHandler.init("kunal", null, "localhost", 8080);
+        //testGet(httpHandler);
+        //testFilePut(httpHandler);
+        try {
+			testDirPut(httpHandler);
+		} catch (HttpServerException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (HttpClientException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+        System.out.println("After");
+    }	
 }
