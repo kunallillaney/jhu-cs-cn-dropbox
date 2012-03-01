@@ -7,6 +7,11 @@ import javax.activation.MimetypesFileTypeMap;
 
 import cn.dropbox.common.rmgmt.api.Resource;
 import cn.dropbox.common.rmgmt.model.Directory;
+import cn.dropbox.server.accessmgmt.AccessMgr;
+import cn.dropbox.server.common.api.ForbiddenException;
+import cn.dropbox.server.common.api.ResourceAlreadyExistsException;
+import cn.dropbox.server.common.api.ResourceDoesNotExistException;
+import cn.dropbox.server.common.api.ServerException;
 import cn.dropbox.server.listen.ServerListen;
 import cn.dropbox.server.rmgmt.api.ResourceMgr;
 
@@ -22,8 +27,8 @@ public class DirectoryMgr implements ResourceMgr {
 	 */
 
 	@Override
-	public Resource get(String uri) {
-
+	public Resource get(String uri) throws ResourceDoesNotExistException ,ForbiddenException ,ServerException {
+	    AccessMgr.getInstance().isValidAccess(uri);
 		File file = new File(ServerListen.DOCROOT, uri);
 		if (file.exists()) {
 			cn.dropbox.common.rmgmt.model.Directory dirResource = new cn.dropbox.common.rmgmt.model.Directory();
@@ -73,22 +78,39 @@ public class DirectoryMgr implements ResourceMgr {
 				}
 			}
 			return dirResource;
+		} else {
+		    throw new ResourceDoesNotExistException("Specified directory does not exist - "+uri);
 		}
-		return null;
 	}
-
-	@Override
-	public void put(Resource resource) {
+	
+	
+	public void put(Resource resource) throws ResourceAlreadyExistsException, ForbiddenException, ServerException {
 		String uri = resource.getURI();
-		cn.dropbox.common.rmgmt.model.Directory dirResource = (cn.dropbox.common.rmgmt.model.Directory) resource;
-		File file = new File(ServerListen.DOCROOT + uri,
-				dirResource.getDirName());
-		file.mkdir();
+        AccessMgr.getInstance().isValidAccess(uri);
+		try {
+            File file = new File(ServerListen.DOCROOT + uri,
+    				resource.getResourceName());
+            if(file.exists()) {
+                throw new ResourceAlreadyExistsException("Directory already exists - "+uri);
+            }
+    		boolean isDirCreated = file.mkdir();
+    		if(!isDirCreated) {
+                throw new ServerException("Unable to create the directory ["
+                        + resource.getResourceName() + "] in URI [" + resource.getURI() + "]");
+    		}
+		} catch(Throwable t) {
+		    throw new ServerException(t.getMessage() + " : Unable to create the directory ["
+                        + resource.getResourceName() + "] in URI [" + resource.getURI() + "]", t);
+		}
 	}
 
 	@Override
-	public void delete(String uri) {
+	public void delete(String uri) throws ForbiddenException, ResourceDoesNotExistException {
+	    AccessMgr.getInstance().isValidAccess(uri);
 		File file = new File(ServerListen.DOCROOT, uri);
+        if(!file.exists()) {
+            throw new ResourceDoesNotExistException("Directory does not exist - " + uri);
+        }
 		file.delete();
 	}
 

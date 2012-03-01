@@ -22,7 +22,6 @@ import cn.dropbox.common.rmgmt.api.Resource;
 import cn.dropbox.common.rmgmt.model.Directory;
 import cn.dropbox.common.rmgmt.model.File;
 import cn.dropbox.common.rmgmt.model.RType;
-import cn.dropbox.server.listen.ServerListen;
 import cn.dropbox.server.parser.XMLUtil;
 
 public class DirectoryXMLHandler implements XMLHandler, XMLConstants {
