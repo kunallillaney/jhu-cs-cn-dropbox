@@ -16,6 +16,10 @@ import org.apache.http.protocol.HttpRequestHandler;
 
 import cn.dropbox.common.rmgmt.api.Resource;
 import cn.dropbox.common.rmgmt.model.RType;
+import cn.dropbox.server.common.api.ForbiddenException;
+import cn.dropbox.server.common.api.ResourceAlreadyExistsException;
+import cn.dropbox.server.common.api.ResourceDoesNotExistException;
+import cn.dropbox.server.common.api.ServerException;
 import cn.dropbox.server.listen.ServerListen;
 import cn.dropbox.server.parser.XMLUtil;
 import cn.dropbox.server.rmgmt.ResourceMagrFactory;
@@ -41,52 +45,72 @@ public class ReqHandler implements HttpRequestHandler {
 		 * MethodNotSupportedException(method + " method not supported"); }
 		 */
 		String target = request.getRequestLine().getUri();
-		if (method.equals("GET")) {
-			System.out.println(target);
-			File file = new File(ServerListen.DOCROOT, target);
-			ResourceMgr rmgr = null;
-			if (file.isFile()) {
-				rmgr = ResourceMagrFactory.getResourceMgr(RType.FILE);
-			} else if (file.isDirectory()) {
-				rmgr = ResourceMagrFactory.getResourceMgr(RType.DIRECTORY);
-			}
-
-			StringEntity entity = new StringEntity(XMLUtil.constructXML(rmgr
-					.get(target)));
-			response.setStatusCode(HttpStatus.SC_OK);
-			response.setEntity(entity);
-		} else if (method.equals("PUT")) {
-			System.out.println(target);
-			if (request instanceof HttpEntityEnclosingRequest) {
-				HttpEntity entity = ((HttpEntityEnclosingRequest) request)
-						.getEntity();
-				Resource rsrc = XMLUtil.constructResource(entity.getContent());
-				rsrc.setURI(target);
-				ResourceMgr rmgr = null;
-				if (rsrc.getType() == RType.FILE) {
-					rmgr = ResourceMagrFactory.getResourceMgr(RType.FILE);
-				} else if (rsrc.getType() == RType.DIRECTORY) {
-					rmgr = ResourceMagrFactory.getResourceMgr(RType.DIRECTORY);
-				} else if (rsrc.getType() == RType.USERACCOUNT) {
-					rmgr = ResourceMagrFactory
-							.getResourceMgr(RType.USERACCOUNT);
-				}
-				rmgr.put(rsrc);
-				response.setStatusCode(HttpStatus.SC_CREATED);
-			}
-
-		} else if (method.equals("DELETE")) {
-			File file = new File(ServerListen.DOCROOT, target);
-			ResourceMgr rmgr = null;
-			if (file.isFile()) {
-				rmgr = ResourceMagrFactory.getResourceMgr(RType.FILE);
-			} else if (file.isDirectory()) {
-				rmgr = ResourceMagrFactory.getResourceMgr(RType.DIRECTORY);
-			}
-
-			rmgr.delete(target);
-			response.setStatusCode(HttpStatus.SC_OK);
-		}
+		try {
+    		if (method.equals("GET")) {
+    			System.out.println(target);
+    			File file = new File(ServerListen.DOCROOT, target);
+    			ResourceMgr rmgr = null;
+    			if (file.isFile()) {
+    				rmgr = ResourceMagrFactory.getResourceMgr(RType.FILE);
+    			} else if (file.isDirectory()) {
+    				rmgr = ResourceMagrFactory.getResourceMgr(RType.DIRECTORY);
+    			}
+    
+    			StringEntity entity;
+                entity = new StringEntity(XMLUtil.constructXML(rmgr
+                		.get(target)));
+    			response.setStatusCode(HttpStatus.SC_OK);
+    			response.setEntity(entity);
+    		} else if (method.equals("PUT")) {
+    			System.out.println(target);
+    			if (request instanceof HttpEntityEnclosingRequest) {
+    				HttpEntity entity = ((HttpEntityEnclosingRequest) request)
+    						.getEntity();
+    				Resource rsrc = XMLUtil.constructResource(entity.getContent());
+    				rsrc.setURI(target);
+    				ResourceMgr rmgr = null;
+    				if (rsrc.getType() == RType.FILE) {
+    					rmgr = ResourceMagrFactory.getResourceMgr(RType.FILE);
+    				} else if (rsrc.getType() == RType.DIRECTORY) {
+    					rmgr = ResourceMagrFactory.getResourceMgr(RType.DIRECTORY);
+    				} else if (rsrc.getType() == RType.USERACCOUNT) {
+    					rmgr = ResourceMagrFactory
+    							.getResourceMgr(RType.USERACCOUNT);
+    				}
+    				rmgr.put(rsrc);
+    				response.setStatusCode(HttpStatus.SC_CREATED);
+    			}
+    
+    		} else if (method.equals("DELETE")) {
+    			File file = new File(ServerListen.DOCROOT, target);
+    			ResourceMgr rmgr = null;
+    			if (file.isFile()) {
+    				rmgr = ResourceMagrFactory.getResourceMgr(RType.FILE);
+    			} else if (file.isDirectory()) {
+    				rmgr = ResourceMagrFactory.getResourceMgr(RType.DIRECTORY);
+    			}
+    
+    			rmgr.delete(target);
+    			response.setStatusCode(HttpStatus.SC_OK);
+    		}
+        } catch (ResourceDoesNotExistException e) {
+            e.printStackTrace();
+            response.setStatusCode(HttpStatus.SC_NOT_FOUND);
+        } catch (ForbiddenException e) {
+            e.printStackTrace();
+            int respCode = (e.getCode() == ForbiddenException.FORBIDDEN) ? HttpStatus.SC_FORBIDDEN : HttpStatus.SC_UNAUTHORIZED; 
+            response.setStatusCode(respCode);
+        } catch (ServerException e) {
+            e.printStackTrace();
+            response.setStatusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        } catch (ResourceAlreadyExistsException e) {
+            e.printStackTrace();
+            response.setStatusCode(HttpStatus.SC_BAD_REQUEST);
+        } catch (Throwable t) {
+            // Any other client side errors
+            t.printStackTrace();
+            response.setStatusCode(HttpStatus.SC_BAD_REQUEST);
+        }
 
 		/*
 		 * if (request instanceof HttpEntityEnclosingRequest) { HttpEntity

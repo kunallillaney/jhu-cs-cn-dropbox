@@ -120,7 +120,7 @@ public class FileXMLHandler implements XMLHandler, XMLConstants {
     public static void main(String[] args) {
         FileInputStream fin;
         try {
-            fin = new FileInputStream("parseme.xml");
+            fin = new FileInputStream("fileput.xml");
             Resource res = XMLUtil.constructResource(fin);
             System.out.println(res);
             fin.close();
