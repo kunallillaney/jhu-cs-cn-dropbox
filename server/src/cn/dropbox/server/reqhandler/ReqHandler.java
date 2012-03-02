@@ -2,8 +2,13 @@ package cn.dropbox.server.reqhandler;
 
 import java.io.File;
 import java.io.IOException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Locale;
+import java.util.UUID;
 
+import org.apache.http.Header;
+import org.apache.http.HeaderElement;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpException;
@@ -11,15 +16,21 @@ import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.message.BasicHeader;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpRequestHandler;
 
+import com.sun.org.apache.xml.internal.security.utils.Base64;
+
 import cn.dropbox.common.rmgmt.api.Resource;
 import cn.dropbox.common.rmgmt.model.RType;
+import cn.dropbox.common.rmgmt.model.UserDetails;
 import cn.dropbox.server.common.api.ForbiddenException;
 import cn.dropbox.server.common.api.ResourceAlreadyExistsException;
 import cn.dropbox.server.common.api.ResourceDoesNotExistException;
 import cn.dropbox.server.common.api.ServerException;
+import cn.dropbox.server.common.api.UserSessions;
+import cn.dropbox.server.common.api.UserThreadLocal;
 import cn.dropbox.server.listen.ServerListen;
 import cn.dropbox.server.parser.XMLUtil;
 import cn.dropbox.server.rmgmt.ResourceMagrFactory;
@@ -33,7 +44,18 @@ public class ReqHandler implements HttpRequestHandler {
 		super();
 		// this.docRoot = docRoot;
 	}
-
+    
+	private String valueaddNameValuePairToValueElem(String curValue,
+            String nameOfTheValue, String valueToBeAdded) {
+        if(curValue != null && !curValue.equals("")) {
+            curValue += ",";
+        } else {
+            curValue = "";
+        }
+        curValue += (nameOfTheValue + "=" + "\"" + valueToBeAdded+ "\"");
+        return curValue;
+    }
+    
 	public void handle(final HttpRequest request, final HttpResponse response,
 			final HttpContext context) throws HttpException, IOException {
 
@@ -44,6 +66,35 @@ public class ReqHandler implements HttpRequestHandler {
 		 * !method.equals("POST")) { throw new
 		 * MethodNotSupportedException(method + " method not supported"); }
 		 */
+		
+		// Check whether there is an authorization header
+		// If no, send a 401 and a nonce to the client
+		// If yes, verify the response
+		// If verification succeeds, overwrite <username, counter> in the map and continue
+		// IF verification fails, send 401 and nonce again! 
+
+	    // Check whether there is an authorization header
+        Header[] authHeaders = request.getHeaders("Authorization");
+        if(authHeaders == null || authHeaders.length == 0) {
+            response.setStatusCode(HttpStatus.SC_UNAUTHORIZED);
+            String curValue = "";
+            curValue = valueaddNameValuePairToValueElem(curValue, "nonce", UUID.randomUUID().toString());
+            Header wwwAuthHeader = new BasicHeader("WWW-Authenticate", curValue);
+            response.addHeader(wwwAuthHeader);
+            return;
+        }
+        Header authHeader = authHeaders[0];
+        boolean isVerified = verifyResponse(authHeader); // overwrite the counter here only if it is verified. Also set the username in the threadlocal variable.
+        if(!isVerified) {
+            response.setStatusCode(HttpStatus.SC_UNAUTHORIZED);
+            String curValue = "";
+            curValue = valueaddNameValuePairToValueElem(curValue, "nonce", UUID.randomUUID().toString());
+            Header wwwAuthHeader = new BasicHeader("WWW-Authenticate", curValue);
+            response.addHeader(wwwAuthHeader);
+            return;
+        } 
+        
+		
 		String target = request.getRequestLine().getUri();
 		try {
     		if (method.equals("GET")) {
@@ -166,4 +217,55 @@ public class ReqHandler implements HttpRequestHandler {
 		 * }
 		 */
 	}
+
+    private boolean verifyResponse(Header authHeader) {
+        String userName = getValue(authHeader, "username");
+        if(ServerListen.userPswds.get(userName) == null) {
+            return false;
+        }
+        
+        String serverNonce = getValue(authHeader, "nonce");
+        String uri = getValue(authHeader, "uri");
+        String ncStr = getValue(authHeader, "nc");
+        String cnonce = getValue(authHeader, "cnonce");
+        String response = getValue(authHeader, "response");
+        
+        
+        // Compute the response 
+        String ha1Str = userName+":"+ServerListen.userPswds.get(userName);
+        String ha2Str = uri; // "GET:"+URI; 
+        // generate cnonce
+        String midStr = serverNonce+":"+ncStr+":"+cnonce;
+        String finalMd5Str = md5(md5(ha1Str) + ":" + midStr + ":" + md5(ha2Str));
+        
+        boolean isVerified = finalMd5Str.equals(response);
+        if(isVerified) {
+            UserThreadLocal.setUser(new UserDetails(userName));
+        }
+        return isVerified;
+        
+    }
+    
+    private String getValue(Header authHeader, String name) {
+        HeaderElement[] elements = authHeader.getElements();
+        for (int i = 0; i < elements.length; i++) {
+            if(name.equals(elements[i].getName())) {
+                return elements[i].getValue();
+            }
+        }
+        return null;
+    }
+    
+    private String md5(String str) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA1");
+            digest.update(str.getBytes());
+            byte[] md5Bytes = digest.digest();
+            return new String(Base64.encode(md5Bytes));
+        } catch (NoSuchAlgorithmException e) {
+            // TODO : Ignore as of now
+            e.printStackTrace();
+        }
+        return null;
+    }    
 }

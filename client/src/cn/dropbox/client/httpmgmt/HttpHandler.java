@@ -3,9 +3,13 @@ package cn.dropbox.client.httpmgmt;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Date;
+import java.util.UUID;
 
 import org.apache.http.ConnectionReuseStrategy;
+import org.apache.http.Header;
 import org.apache.http.HeaderElement;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpException;
@@ -35,6 +39,8 @@ import org.apache.http.protocol.RequestTargetHost;
 import org.apache.http.protocol.RequestUserAgent;
 import org.w3c.dom.Document;
 
+import com.sun.org.apache.xml.internal.security.utils.Base64;
+
 import cn.dropbox.client.parser.XMLHandlerFactory;
 import cn.dropbox.common.parser.api.XMLHandler;
 import cn.dropbox.common.parser.impl.XMLHelper;
@@ -58,6 +64,7 @@ public class HttpHandler {
 	private String userName; // TODO: Change the type to User
 	private String password; // TODO: Change the type of this object
 	private int nc;
+	private String serverNonce;
 
 	private static HttpHandler handler = null;
 
@@ -91,12 +98,200 @@ public class HttpHandler {
     
     public void performLogin(String userName, String password) throws HttpClientException, HttpServerException {
         
-        
+        HttpParams params = new BasicHttpParams();
+        HttpProtocolParams.setVersion(params, HttpVersion.HTTP_1_1);
+        HttpProtocolParams.setContentCharset(params, "UTF-8");
+        HttpProtocolParams.setUserAgent(params, "HttpComponents/1.1");
+        HttpProtocolParams.setUseExpectContinue(params, true);
+
+        HttpContext context = new BasicHttpContext(null);
+        HttpHost host = new HttpHost(this.host, this.port);
+
+        DefaultHttpClientConnection conn = new DefaultHttpClientConnection();
+        context.setAttribute(ExecutionContext.HTTP_CONNECTION, conn);
+        context.setAttribute(ExecutionContext.HTTP_TARGET_HOST, host);
+
+        try {
+            ConnectionReuseStrategy connStrategy = new DefaultConnectionReuseStrategy();
+            if (!conn.isOpen()) {
+                Socket socket = new Socket(host.getHostName(), host.getPort());
+                conn.bind(socket, params);
+            }
+            String uri = "/"+userName+"/";
+            BasicHttpRequest request = new BasicHttpRequest("GET", uri);
+
+            BasicHttpProcessor httpproc = new BasicHttpProcessor();
+            httpproc.addInterceptor(new RequestContent());
+            httpproc.addInterceptor(new RequestTargetHost());
+            httpproc.addInterceptor(new RequestConnControl());
+            httpproc.addInterceptor(new RequestUserAgent());
+            httpproc.addInterceptor(new RequestExpectContinue());
+
+            HttpRequestExecutor httpexecutor = new HttpRequestExecutor();
+
+            httpexecutor.preProcess(request, httpproc, context);
+            HttpResponse response = httpexecutor
+                    .execute(request, conn, context);
+            response.setParams(params);
+            httpexecutor.postProcess(response, httpproc, context);
+
+            StatusLine status = response.getStatusLine();
+
+            // close the first connection
+            if (!connStrategy.keepAlive(response, context)) {
+                conn.close();
+            } else {
+                System.out.println("Connection kept alive...");
+            }
+            
+            if (status.getStatusCode() == HttpStatus.SC_UNAUTHORIZED)
+            {
+                // Not authenticated! So send auth headers
+                // Parse the nonse sent by the server
+                serverNonce = getHeaderValue(response, "WWW-Authenticate", "nonce");
+                nc = 0;
+                Header authHeader = constructAuthHeader(userName, password, uri);
+                
+                HttpParams paramsIn = new BasicHttpParams();
+                HttpProtocolParams.setVersion(paramsIn, HttpVersion.HTTP_1_1);
+                HttpProtocolParams.setContentCharset(paramsIn, "UTF-8");
+                HttpProtocolParams.setUserAgent(paramsIn, "HttpComponents/1.1");
+                HttpProtocolParams.setUseExpectContinue(paramsIn, true);
+
+                HttpContext contextIn = new BasicHttpContext(null);
+                HttpHost hostIn = new HttpHost(this.host, this.port);
+
+                DefaultHttpClientConnection connIn = new DefaultHttpClientConnection();
+                contextIn.setAttribute(ExecutionContext.HTTP_CONNECTION, connIn);
+                contextIn.setAttribute(ExecutionContext.HTTP_TARGET_HOST, hostIn);                
+                
+                ConnectionReuseStrategy connStrategyIn = new DefaultConnectionReuseStrategy();
+                if (!connIn.isOpen()) {
+                    Socket socket = new Socket(hostIn.getHostName(), hostIn.getPort());
+                    connIn.bind(socket, paramsIn);
+                }
+
+                BasicHttpProcessor httpprocIn = new BasicHttpProcessor();
+                httpprocIn.addInterceptor(new RequestContent());
+                httpprocIn.addInterceptor(new RequestTargetHost());
+                httpprocIn.addInterceptor(new RequestConnControl());
+                httpprocIn.addInterceptor(new RequestUserAgent());
+                httpprocIn.addInterceptor(new RequestExpectContinue());                
+                
+                // Send the digest to server
+                BasicHttpRequest requestIn = new BasicHttpRequest("GET", uri);
+                HttpRequestExecutor httpexecutorIn = new HttpRequestExecutor();
+
+                requestIn.setHeader(authHeader);
+                
+                httpexecutorIn.preProcess(requestIn, httpprocIn, contextIn);
+                HttpResponse responseIn = httpexecutorIn
+                        .execute(requestIn, connIn, contextIn);
+                responseIn.setParams(paramsIn);
+                httpexecutorIn.postProcess(responseIn, httpprocIn, contextIn);
+
+                StatusLine statusIn = response.getStatusLine();
+                if (statusIn.getStatusCode() != HttpStatus.SC_OK) {
+                    // Authentication successful
+                    this.userName = userName;
+                    this.password = password;
+                }
+                
+                // close the first connection
+                if (!connStrategyIn.keepAlive(response, contextIn)) {
+                    connIn.close();
+                } else {
+                    System.out.println("Connection kept alive...");
+                }                
+                
+            } else if(status.getStatusCode() != HttpStatus.SC_OK){
+                throw new HttpServerException(status.getStatusCode(), status.getReasonPhrase(), null);
+            } else {
+                // User is already Authenticated and everything is well set
+                this.userName = userName;
+                this.password = password;
+            }
+
+        } catch (UnknownHostException e) {
+            throw new HttpClientException(e.getMessage(), e);
+        } catch (IOException e) {
+            throw new HttpClientException(e.getMessage(), e);
+        } catch (HttpException e) {
+            throw new HttpClientException(e.getMessage(), e);
+        } finally {
+            try {
+                conn.close();
+            } catch (IOException e) {
+                throw new HttpClientException(e.getMessage(), e);
+            }
+        }        
         
     }
 	
 
-	public void executePUT(Resource resource) throws HttpServerException, HttpClientException {
+    private Header constructAuthHeader(String userName, String password, String URI) throws HttpClientException {
+        String curValue = "";
+        curValue = valueaddNameValuePairToValueElem(curValue, "username", userName);
+        curValue = valueaddNameValuePairToValueElem(curValue, "nonce", serverNonce);
+        curValue = valueaddNameValuePairToValueElem(curValue, "uri", URI); 
+        curValue = valueaddNameValuePairToValueElem(curValue, "nc", Integer.toString(nc));
+        UUID cnonceUuid = UUID.randomUUID();
+        String cnonce = cnonceUuid.toString();
+        curValue = valueaddNameValuePairToValueElem(curValue, "cnonce", cnonce);
+        
+        // Compute the response to be set
+        String ha1Str = userName+":"+password;
+        String ha2Str = URI; // "GET:"+URI; 
+        // generate cnonce
+        String midStr = serverNonce+":"+nc+":"+cnonce;
+        String finalMd5Str = md5(md5(ha1Str) + ":" + midStr + ":" + md5(ha2Str));
+        
+        curValue = valueaddNameValuePairToValueElem(curValue, "response", finalMd5Str);
+        
+        Header retHeader = new BasicHeader("Authorization", curValue);
+        nc++;
+        return retHeader;
+    }
+
+    private String md5(String str) throws HttpClientException {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA1");
+            digest.update(str.getBytes());
+            byte[] md5Bytes = digest.digest();
+            return new String(Base64.encode(md5Bytes));
+        } catch (NoSuchAlgorithmException e) {
+            throw new HttpClientException(e.getMessage(), e);
+        }
+    }
+
+    private String valueaddNameValuePairToValueElem(String curValue,
+            String nameOfTheValue, String valueToBeAdded) {
+        if(curValue != null && !curValue.equals("")) {
+            curValue += ",";
+        } else {
+            curValue = "";
+        }
+        curValue += (nameOfTheValue + "=" + "\"" + valueToBeAdded+ "\"");
+        return curValue;
+    }
+
+    private String getHeaderValue(HttpResponse response, String headerName,
+            String headerValElementName) throws HttpServerException {
+        Header[] headers = response.getHeaders(headerName);
+        if(headers == null || headers.length == 0) {
+            throw new HttpServerException(HttpStatus.SC_INTERNAL_SERVER_ERROR, "Required header not set by the server!", null);
+        }
+        Header header = headers[0];
+        HeaderElement[] valElems = header.getElements();
+        for (int i = 0; i < valElems.length; i++) {
+            if(headerValElementName.equals(valElems[i].getName())) {
+                return valElems[i].getValue();
+            }
+        }
+        return null;
+    }
+
+    public void executePUT(Resource resource) throws HttpServerException, HttpClientException {
 
 		HttpParams params = new BasicHttpParams();
 		HttpProtocolParams.setVersion(params, HttpVersion.HTTP_1_1);
@@ -143,6 +338,10 @@ public class HttpHandler {
 					"PUT", resource.getURI());
 			request.setEntity(requestBody);
 			request.setParams(params);
+			
+            Header authHeader = constructAuthHeader(userName, password, resource.getURI());
+            request.setHeader(authHeader);
+			
 			httpexecutor.preProcess(request, httpproc, context);
 			HttpResponse response = httpexecutor
 					.execute(request, conn, context);
@@ -214,10 +413,8 @@ public class HttpHandler {
 
 			HttpRequestExecutor httpexecutor = new HttpRequestExecutor();
 
-			BasicHeader header1 = new BasicHeader("newheader", "Digest realm=\"testrealm\", qop=\"auth\"");
-			HeaderElement[] elems = header1.getElements();
-            
-            request.addHeader(header1);
+			Header authHeader = constructAuthHeader(userName, password, URI);
+			request.setHeader(authHeader);
 			
 			httpexecutor.preProcess(request, httpproc, context);
 			HttpResponse response = httpexecutor
@@ -307,6 +504,11 @@ public class HttpHandler {
 			}
 			BasicHttpRequest request = new BasicHttpRequest("DELETE", URI);
 			request.setParams(params);
+			
+            Header authHeader = constructAuthHeader(userName, password, URI);
+            request.setHeader(authHeader);
+			
+			
 			httpexecutor.preProcess(request, httpproc, context);
 			HttpResponse response = httpexecutor
 					.execute(request, conn, context);
@@ -346,7 +548,7 @@ public class HttpHandler {
     }
     private static void testFilePut(HttpHandler httpHandler) throws HttpServerException, HttpClientException {
         File resource = new File();
-        resource.setFileName("newfile.txt");
+        resource.setFileName("newfile1.txt");
         resource.setFileSize(100);
         resource.setLastModified(new Date());
         resource.setMimeType("app/pdf");
@@ -361,15 +563,25 @@ public class HttpHandler {
         httpHandler.executePUT(resource);
     }
     
+    private static void testLogin(HttpHandler httpHandler) throws HttpClientException, HttpServerException {
+        httpHandler.init("localhost", 8089);
+        httpHandler.performLogin("kunal", "mypassword");
+    }
+    
 	public static void main(String[] args) {
         System.out.println("Before");
+        
+        UUID uuid = UUID.randomUUID();
+        System.out.println(uuid.toString());
+        
 	    HttpHandler httpHandler = HttpHandler.getInstance();
         httpHandler.init("localhost", 8089);
-        httpHandler.setUserName("kunal");
-        //testFilePut(httpHandler);
+        //httpHandler.setUserName("kunal");
         try {
-            testGet(httpHandler);
+            testLogin(httpHandler);
+            //testGet(httpHandler);
 			//testDirPut(httpHandler);
+	        testFilePut(httpHandler);
 		} catch (HttpServerException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
