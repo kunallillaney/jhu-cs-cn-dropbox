@@ -37,9 +37,8 @@ import org.apache.http.protocol.RequestContent;
 import org.apache.http.protocol.RequestExpectContinue;
 import org.apache.http.protocol.RequestTargetHost;
 import org.apache.http.protocol.RequestUserAgent;
+import org.bouncycastle.util.encoders.Base64;
 import org.w3c.dom.Document;
-
-import com.sun.org.apache.xml.internal.security.utils.Base64;
 
 import cn.dropbox.client.parser.XMLHandlerFactory;
 import cn.dropbox.common.parser.api.XMLHandler;
@@ -190,11 +189,13 @@ public class HttpHandler {
                 responseIn.setParams(paramsIn);
                 httpexecutorIn.postProcess(responseIn, httpprocIn, contextIn);
 
-                StatusLine statusIn = response.getStatusLine();
-                if (statusIn.getStatusCode() != HttpStatus.SC_OK) {
+                StatusLine statusIn = responseIn.getStatusLine();
+                if (statusIn.getStatusCode() == HttpStatus.SC_OK) {
                     // Authentication successful
                     this.userName = userName;
                     this.password = password;
+                } else {
+                	throw new HttpServerException(status.getStatusCode(), status.getReasonPhrase(), null);
                 }
                 
                 // close the first connection
