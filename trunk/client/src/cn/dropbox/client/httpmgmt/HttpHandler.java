@@ -6,6 +6,7 @@ import java.net.UnknownHostException;
 import java.util.Date;
 
 import org.apache.http.ConnectionReuseStrategy;
+import org.apache.http.HeaderElement;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
@@ -16,6 +17,7 @@ import org.apache.http.StatusLine;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.DefaultConnectionReuseStrategy;
 import org.apache.http.impl.DefaultHttpClientConnection;
+import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicHttpEntityEnclosingRequest;
 import org.apache.http.message.BasicHttpRequest;
 import org.apache.http.params.BasicHttpParams;
@@ -54,8 +56,8 @@ public class HttpHandler {
 	private String host;
 	private int port;
 	private String userName; // TODO: Change the type to User
-
-	private Object authHeader; // TODO: Change the type of this object
+	private String password; // TODO: Change the type of this object
+	private int nc;
 
 	private static HttpHandler handler = null;
 
@@ -66,12 +68,31 @@ public class HttpHandler {
 		return handler;
 	}
 
-	public void init(String userName, Object authHeader, String host, int port) {
-		this.userName = userName;
-		this.authHeader = authHeader;
+	public void init(String host, int port) {
 		this.host = host;
 		this.port = port;
 	}
+	
+	public void setPort(int port) {
+        this.port = port;
+    }
+	
+	public void setHost(String host) {
+        this.host = host;
+    }
+	
+	public void setUserName(String userName) {
+	    this.userName = userName;
+	}
+	
+    public void setPassword(String password) {
+        this.password = password;
+    }
+    
+    public void performLogin() throws HttpClientException, HttpServerException {
+        
+    }
+	
 
 	public void executePUT(Resource resource) throws HttpServerException, HttpClientException {
 
@@ -143,7 +164,7 @@ public class HttpHandler {
 			try {
 				conn.close();
 			} catch (IOException e) {
-				throw new HttpClientException(e.getMessage(), e);				
+				throw new HttpClientException(e.getMessage(), e);
 			}
 		}
 	}
@@ -164,6 +185,16 @@ public class HttpHandler {
 		context.setAttribute(ExecutionContext.HTTP_CONNECTION, conn);
 		context.setAttribute(ExecutionContext.HTTP_TARGET_HOST, host);
 
+		//context.setAttribute("newattr", "testattr value");
+//        AuthScope scope = new AuthScope(this.host, port);
+//        UsernamePasswordCredentials creds = new UsernamePasswordCredentials("raghu", "password");
+//
+//        CredentialsProvider cp = new BasicCredentialsProvider();
+//        cp.setCredentials(scope, creds);
+//        HttpContext credContext = new BasicHttpContext();
+//        credContext.setAttribute(ClientContext.CREDS_PROVIDER, cp);
+		
+		
 		try {
 			ConnectionReuseStrategy connStrategy = new DefaultConnectionReuseStrategy();
 			if (!conn.isOpen()) {
@@ -181,7 +212,11 @@ public class HttpHandler {
 
 			HttpRequestExecutor httpexecutor = new HttpRequestExecutor();
 
-			request.setParams(params);
+			BasicHeader header1 = new BasicHeader("newheader", "Digest realm=\"testrealm\", qop=\"auth\"");
+			HeaderElement[] elems = header1.getElements();
+            
+            request.addHeader(header1);
+			
 			httpexecutor.preProcess(request, httpproc, context);
 			HttpResponse response = httpexecutor
 					.execute(request, conn, context);
@@ -303,18 +338,6 @@ public class HttpHandler {
 		return userName;
 	}
 
-	public void setUserName(String userName) {
-		this.userName = userName;
-	}
-
-	public Object getAuthHeader() {
-		return authHeader;
-	}
-
-	public void setAuthHeader(Object authHeader) {
-		this.authHeader = authHeader;
-	}
-
 	public static void testGet(HttpHandler httpHandler) throws HttpServerException, HttpClientException {
         Resource resource = httpHandler.executeGET("/kunal/testdir/", RType.DIRECTORY);
         System.out.println(resource);
@@ -339,11 +362,12 @@ public class HttpHandler {
 	public static void main(String[] args) {
         System.out.println("Before");
 	    HttpHandler httpHandler = HttpHandler.getInstance();
-        httpHandler.init("kunal", null, "localhost", 8080);
-        //testGet(httpHandler);
+        httpHandler.init("localhost", 8089);
+        httpHandler.setUserName("kunal");
         //testFilePut(httpHandler);
         try {
-			testDirPut(httpHandler);
+            testGet(httpHandler);
+			//testDirPut(httpHandler);
 		} catch (HttpServerException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
