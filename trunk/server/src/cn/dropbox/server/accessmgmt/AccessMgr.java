@@ -35,7 +35,7 @@ public class AccessMgr {
             URI resolvedURI = baseUri.resolve(toberesolvedUri);
             String resolvedURIStr = resolvedURI.getPath();
             
-            if(true) return; // TODO: Remove this when Aithentoication is in place.
+            // if(true) return; // TODO: Remove this when Aithentoication is in place.
             
             if(!resolvedURIStr.startsWith(UserThreadLocal.getUser().getUserName()) 
                     || resolvedURIStr.contains("..")) {
