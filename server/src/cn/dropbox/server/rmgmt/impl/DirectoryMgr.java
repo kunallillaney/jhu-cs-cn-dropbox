@@ -27,8 +27,9 @@ public class DirectoryMgr implements ResourceMgr {
 	 */
 
 	@Override
-	public Resource get(String uri) throws ResourceDoesNotExistException ,ForbiddenException ,ServerException {
-	    AccessMgr.getInstance().isValidAccess(uri);
+	public Resource get(String uri) throws ResourceDoesNotExistException,
+			ForbiddenException, ServerException {
+		AccessMgr.getInstance().isValidAccess(uri);
 		File file = new File(ServerListen.DOCROOT, uri);
 		if (file.exists()) {
 			cn.dropbox.common.rmgmt.model.Directory dirResource = new cn.dropbox.common.rmgmt.model.Directory();
@@ -41,7 +42,8 @@ public class DirectoryMgr implements ResourceMgr {
 					Directory tempdirResource = new Directory();
 					tempdirResource.setDirName(tempFile.getName());
 					tempdirResource.setURI(uri + list[i] + "/");
-					tempdirResource.setLastModified(new Date(tempFile.lastModified()));
+					tempdirResource.setLastModified(new Date(tempFile
+							.lastModified()));
 					dirResource.getDirectories().add(tempdirResource);
 				} else {
 					cn.dropbox.common.rmgmt.model.File tempfileResource = new cn.dropbox.common.rmgmt.model.File();
@@ -62,12 +64,14 @@ public class DirectoryMgr implements ResourceMgr {
 						subdirresource.getDirName());
 				String[] sublist = tempFile.list();
 				for (int j = 0; j < sublist.length; j++) {
-					File subTempFile = new File(ServerListen.DOCROOT + uri + "/" + subdirresource.getDirName(),
-							sublist[j]);
+					File subTempFile = new File(ServerListen.DOCROOT + uri
+							+ "/" + subdirresource.getDirName(), sublist[j]);
 					if (subTempFile.isDirectory()) {
 						Directory subtempdirResource = new Directory();
 						subtempdirResource.setDirName(subTempFile.getName());
-						subtempdirResource.setURI(uri + "/" + subdirresource.getDirName() + "/" + sublist[j]);
+						subtempdirResource.setURI(uri + "/"
+								+ subdirresource.getDirName() + "/"
+								+ sublist[j]);
 						subdirresource.getDirectories().add(subtempdirResource);
 					} else {
 						cn.dropbox.common.rmgmt.model.File subtempfileResource = new cn.dropbox.common.rmgmt.model.File();
@@ -79,39 +83,61 @@ public class DirectoryMgr implements ResourceMgr {
 			}
 			return dirResource;
 		} else {
-		    throw new ResourceDoesNotExistException("Specified directory does not exist - "+uri);
+			throw new ResourceDoesNotExistException(
+					"Specified directory does not exist - " + uri);
 		}
 	}
-	
-	
-	public void put(Resource resource) throws ResourceAlreadyExistsException, ForbiddenException, ServerException {
+
+	public void put(Resource resource) throws ResourceAlreadyExistsException,
+			ForbiddenException, ServerException {
 		String uri = resource.getURI();
-        AccessMgr.getInstance().isValidAccess(uri);
+		AccessMgr.getInstance().isValidAccess(uri);
 		try {
-            File file = new File(ServerListen.DOCROOT + uri,
-    				resource.getResourceName());
-            if(file.exists()) {
-                throw new ResourceAlreadyExistsException("Directory already exists - "+uri);
-            }
-    		boolean isDirCreated = file.mkdir();
-    		if(!isDirCreated) {
-                throw new ServerException("Unable to create the directory ["
-                        + resource.getResourceName() + "] in URI [" + resource.getURI() + "]");
-    		}
-		} catch(Throwable t) {
-		    throw new ServerException(t.getMessage() + " : Unable to create the directory ["
-                        + resource.getResourceName() + "] in URI [" + resource.getURI() + "]", t);
+			File file = new File(ServerListen.DOCROOT + uri,
+					resource.getResourceName());
+			if (file.exists()) {
+				throw new ResourceAlreadyExistsException(
+						"Directory already exists - " + uri);
+			}
+			boolean isDirCreated = file.mkdir();
+			if (!isDirCreated) {
+				throw new ServerException("Unable to create the directory ["
+						+ resource.getResourceName() + "] in URI ["
+						+ resource.getURI() + "]");
+			}
+		} catch (Throwable t) {
+			throw new ServerException(t.getMessage()
+					+ " : Unable to create the directory ["
+					+ resource.getResourceName() + "] in URI ["
+					+ resource.getURI() + "]", t);
 		}
 	}
 
 	@Override
-	public void delete(String uri) throws ForbiddenException, ResourceDoesNotExistException {
-	    AccessMgr.getInstance().isValidAccess(uri);
+	public void delete(String uri) throws ForbiddenException,
+			ResourceDoesNotExistException {
+		AccessMgr.getInstance().isValidAccess(uri);
 		File file = new File(ServerListen.DOCROOT, uri);
-        if(!file.exists()) {
-            throw new ResourceDoesNotExistException("Directory does not exist - " + uri);
-        }
-		file.delete();
+		if (!file.exists()) {
+			throw new ResourceDoesNotExistException(
+					"Directory does not exist - " + uri);
+		}
+		deleteDirectory(file);
 	}
+
+	// Recursive Function to delete Directory in Java
+	public void deleteDirectory(File file) {
+		File[] fileList = file.listFiles();
+		for (int i = 0; i < fileList.length; i++) {
+			// System.out.println("Deleting file");
+			if (fileList[i].isDirectory()) {
+				deleteDirectory(fileList[i]);
+			} else {
+				fileList[i].delete();
+			}
+			fileList[i].delete();
+		}
+		file.delete();
+	}// End of function
 
 }
